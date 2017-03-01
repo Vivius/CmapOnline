@@ -1,0 +1,24 @@
+{
+  "name": "CmapOnline",
+  "version": "1.0.0",
+  "description": "Projet de gestion de cartes conceptuelles en ligne.",
+  "main": "server.js",
+  "scripts": {},
+  "repository": {},
+  "author": "vincent.peillex@etu.univ-savoie.fr",
+  "license": "CC-BY-NC-SA-4.0",
+  "dependencies": {
+    "animate.css": "^3.5.2",
+    "d3": "^4.7.0",
+    "express": "^4.13.4",
+    "jquery": "^3.1.1",
+    "md5": "^2.1.0",
+    "mongodb": "^2.1.4",
+    "socket.io": "^1.4.5",
+    "svg-intersections": "^0.3.0"
+  },
+  "devDependencies": {
+    "laravel-elixir": "^6.0.0-15",
+    "laravel-elixir-webpack-official": "^1.0.10"
+  }
+}
