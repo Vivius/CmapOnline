@@ -8,7 +8,7 @@ var shape = svgIntersections.shape;
 // Variables globales
 var width = $(document).width();
 var height = $(document).height();
-var linkDistance = 200;
+var linkDistance = 250;
 var nodeWidth = 120;
 var nodeHeight = 80;
 var colors = d3.scale.category10();
@@ -87,44 +87,12 @@ var force = d3.layout.force()
     .start();
 // Force events.
 force.drag().on("dragstart", nodeDragStart); // Drag des cartes conceptuelles.
+force.drag().on("dragend", nodeDragEnd);
 force.on("tick", forceTick); // Evénement tick du force layout.
 
 update();
 
 function update() {
-    nodes = svg.selectAll(".node")
-        .data(dataset.nodes, function (d) {
-            return d.id;
-        })
-        .enter()
-        .append("g")
-        .attr("class", "node")
-        .attr("transform", function (d) {
-            return "translate(" + d.x + "," + d.y + ")";
-        })
-        .call(force.drag);
-    nodes
-        .append("rect")
-        .attr({
-            "width": nodeWidth,
-            "height": nodeHeight
-        })
-        .style("fill", function (d, i) {
-            return colors(i);
-        });
-    nodes
-        .append("text")
-        .attr({
-            "x": nodeWidth/2,
-            "y": nodeHeight/2,
-            "class": "node-label",
-            "stroke": "#000000",
-            "text-anchor": "middle"
-        })
-        .text(function (d) {
-            return d.name;
-        });
-
     // Liens entre les neouds (arrêtes).
     links = svg.selectAll(".link")
         .data(dataset.links, function (d) {
@@ -172,6 +140,40 @@ function update() {
         })
         .text(function (d, i) {
             return 'label ' + i
+        });
+
+    // Création des cartes.
+    nodes = svg.selectAll(".node")
+        .data(dataset.nodes, function (d) {
+            return d.id;
+        })
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        })
+        .call(force.drag);
+    nodes
+        .append("rect")
+        .attr({
+            "width": nodeWidth,
+            "height": nodeHeight
+        })
+        .style("fill", function (d, i) {
+            return colors(i);
+        });
+    nodes
+        .append("text")
+        .attr({
+            "x": nodeWidth/2,
+            "y": nodeHeight/2,
+            "class": "node-label",
+            "stroke": "#000000",
+            "text-anchor": "middle"
+        })
+        .text(function (d) {
+            return d.name;
         });
 
     // Mise à jour des références avec les nouveaux noeuds ajoutés.
@@ -271,6 +273,11 @@ function forceTick() {
 // Lorque l'on commence à bouger une carte, on la fixe.
 function nodeDragStart(d) {
     d3.select(this).classed("fixed", d.fixed = true);
+}
+
+// TODO : enregistrement des positions après un drag.
+function nodeDragEnd(d) {
+    console.log(this);
 }
 
 // Lorque l'on doule clic sur une carte, on la libère. Le force layout reprend le contrôle.
