@@ -83,8 +83,8 @@ var force = d3.layout.force()
     .linkDistance(linkDistance)
     .charge(-800)
     .theta(0.1)
-    .gravity(0.05)
-    .start();
+    .gravity(0.05);
+
 // Force events.
 force.drag().on("dragstart", nodeDragStart); // Drag des cartes conceptuelles.
 force.drag().on("dragend", nodeDragEnd);
@@ -93,6 +93,9 @@ force.on("tick", forceTick); // Evénement tick du force layout.
 update();
 
 function update() {
+    // Rafraichissement du force layout.
+    force.start();
+
     // Liens entre les neouds (arrêtes).
     links = svg.selectAll(".link")
         .data(dataset.links, function (d) {
@@ -183,9 +186,6 @@ function update() {
 
     // Lorqu'on double clic sur une carte, on la libère.
     nodes.on("dblclick", nodeDbClick);
-
-    // Rafraichissement du force layout.
-    force.start();
 }
 
 // Supprime le noeud passé en paramètre du graphe.
@@ -294,7 +294,13 @@ setTimeout(function () {
     console.log("Ajout de Linux");
     dataset.nodes.push({id: 11, name: "Linux", x:100, y:100});
     update();
- }, 2000);
+}, 2000);
+
+setTimeout(function () {
+    console.log("Ajout de Linux");
+    dataset.links.push({id:13, source: 10, target: 1});
+    update();
+}, 3000);
 
 // Suppression à la volée.
 setTimeout(function () {
