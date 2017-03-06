@@ -15,6 +15,10 @@ var nodeHeight = 80;
 var colors = d3.scale.category10();
 var nodes, links, linkLabels;
 
+/******************************************************************
+ * DONNEES                                                        *
+ ******************************************************************/
+
 // Données à représenter.
 var dataset = {
     nodes: [
@@ -45,6 +49,10 @@ var dataset = {
         {id: 12, source: 8, target: 9}
     ]
 };
+
+/******************************************************************
+ * AFFICHAGE DU GRAPHE                                            *
+ ******************************************************************/
 
 // Création de l'élément SVG conteneur.
 var svg = d3
@@ -94,7 +102,7 @@ force.on("tick", forceTick); // Evénement tick du force layout.
 update();
 
 function update() {
-    // Rafraichissement du force layout.
+    // Rafraichissement du force layout avec les données existentes.
     force.start();
 
     // Liens entre les neouds (arrêtes).
@@ -146,7 +154,7 @@ function update() {
             return 'label ' + i
         });
 
-    // Création des cartes.
+    // Création des cartes (noeuds).
     nodes = svg.selectAll(".node")
         .data(dataset.nodes, function (d) {
             return d.id;
@@ -185,22 +193,6 @@ function update() {
     links = svg.selectAll(".link");
     linkLabels = svg.selectAll(".link-label");
 
-    // Lorqu'on double clic sur une carte, on la libère.
-    nodes.on("dblclick", nodeDbClick);
-}
-
-// Supprime le noeud passé en paramètre du graphe.
-function removeNode(node) {
-    var linksToDelete = [];
-
-    dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
-    $.each(dataset.links, function (i, link) {
-        if(link.source.id == node.id || link.target.id == node.id)
-            linksToDelete.push(link);
-    });
-    $.each(linksToDelete, function (i, link) {
-        dataset.links.splice(dataset.links.indexOf(link), 1);
-    });
     // La suppression des problème provoque un bug uniquement sur firefox.
     // On préfère donc ici les laisser dans le DOM en les laissant invisibles.
     if(!bowser.gecko) {
@@ -223,6 +215,109 @@ function removeNode(node) {
         })
         .exit()
         .remove();
+
+    // Mise à jour des références avec les noeuds supprimés.
+    nodes = svg.selectAll('.node');
+    links = svg.selectAll(".link");
+    linkLabels = svg.selectAll(".link-label");
+
+    // Lorqu'on double clic sur une carte, on la libère.
+    nodes.on("dblclick", nodeDbClick);
+}
+
+/******************************************************************
+ * FONCTIONS DE MANIPULATION DU GRAPHE                            *
+ ******************************************************************/
+
+// Supprime le noeud passé en paramètre du graphe.
+function removeNode(node) {
+    var linksToDelete = [];
+
+    dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
+    $.each(dataset.links, function (i, link) {
+        if(link.source.id == node.id || link.target.id == node.id)
+            linksToDelete.push(link);
+    });
+    $.each(linksToDelete, function (i, link) {
+        dataset.links.splice(dataset.links.indexOf(link), 1);
+    });
+    update();
+}
+
+// Supprime le noeud passé en paramètre du graphe.
+function removeLink(link) {
+    dataset.links.splice(dataset.links.indexOf(link), 1);
+    update();
+}
+
+// Ajoute le noeud passé en paramètre au graphe.
+function addNode(node) {
+    dataset.nodes.push(node);
+    update();
+}
+
+// Ajoute une relation entre les noeuds passés en paramètre.
+function addLink(fromNode, toNode) {
+    var iFrom = dataset.nodes.indexOf(fromNode);
+    var iTo = dataset.nodes.indexOf(toNode);
+    dataset.links.push({id: getMaxLinkId() + 1, source: iFrom, target: iTo});
+    update();
+}
+
+// Permet de trouver en lien en fonction des noeuds soource et target donnés en paramètre.
+function findLink(sourceNode, targetNode) {
+    var link = null;
+    $.each(dataset.links, function (i, val) {
+        if(val.source.id == sourceNode.id && val.target.id == targetNode.id)
+            link = val;
+    });
+    return link;
+}
+
+// Retourne un noeud grâce à son ID.
+function getNodeById(id) {
+    var node = null;
+    $.each(dataset.nodes, function (i, val) {
+        if(val.id == id)
+            node = val;
+    });
+    return node;
+}
+
+// Retourne un lien grâce à son ID.
+function getLinkById(id) {
+    var link = null;
+    $.each(dataset.nodes, function (i, val) {
+        if(val.id == id)
+            link = val;
+    });
+    return link;
+}
+
+// Retourne l'ID max des noeuds.
+function getMaxNodeId() {
+    if(dataset.nodes.length > 0)
+        var max = dataset.nodes[0].id;
+    else
+        return 0;
+    $.each(dataset.nodes, function (i, node) {
+        if(node.id > max)
+            max = node.id;
+    });
+    return max;
+}
+
+// Retourne l'ID max des liens.
+function getMaxLinkId() {
+    if(dataset.links.length > 0)
+        var max = dataset.links[0].id;
+    else
+        return 0;
+    $.each(dataset.links, function (i, link) {
+        if(link.id > max)
+            max = link.id;
+    });
+    return max;
 }
 
 /******************************************************************
@@ -281,7 +376,7 @@ function nodeDragStart(d) {
 }
 
 // TODO : enregistrement des positions après un drag.
-function nodeDragEnd(d) {
+function nodeDragEnd() {
     console.log(this);
 }
 
@@ -294,21 +389,26 @@ function nodeDbClick(d) {
  * TESTS                                                          *
  ******************************************************************/
 
-// Ajout à la volée.
+// Ajout d'un noeud à la volée.
 setTimeout(function () {
-    console.log("Ajout de Linux");
-    dataset.nodes.push({id: 11, name: "Linux", x:100, y:100});
-    update();
+    console.log("Ajout de Linux (" + (getMaxNodeId() + 1) + ")");
+    addNode({id: getMaxNodeId() + 1, name: "Linux", x:100, y:100});
 }, 2000);
 
+// Ajout d'un lien à la volée.
 setTimeout(function () {
     console.log("Ajout de Linux");
-    dataset.links.push({id:13, source: 10, target: 1});
-    update();
+    addLink(getNodeById(10), getNodeById(1));
 }, 3000);
 
-// Suppression à la volée.
+// Suppression d'un noeud et de ses relations à la volée.
 setTimeout(function () {
     console.log("Suppression de C++");
-    removeNode(dataset.nodes[0]);
+    removeNode(getNodeById(0));
 }, 5000);
+
+// Suppression d'un lien unique à la volée.
+setTimeout(function () {
+    console.log("Suppression du lien entre Java et C#");
+    removeLink(findLink(getNodeById(3), getNodeById(4)));
+}, 7000);
