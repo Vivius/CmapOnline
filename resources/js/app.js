@@ -388,13 +388,16 @@ function forceTick() {
 // Lorque l'on commence à bouger une carte, on la fixe.
 function nodeDragStart(d) {
     d3.select(this).classed("fixed", d.fixed = true);
+    if(selectedNode != null)
+        d3.select(selectedNode).select("rect").attr("stroke", "none");
+    selectedNode = this;
+    d3.select(selectedNode).select("rect").attr({"stroke": "red", "stroke-width": 3});
+    $("#menu-node-selected-name").val(d.name);
 }
 
 // TODO : enregistrement des positions après un drag.
 function nodeDragEnd(d) {
-    selectedNode = d;
-    console.log(selectedNode);
-    $("#menu-node-selected-name").val(d.name);
+    console.log(this);
 }
 
 // Lorque l'on doule clic sur une carte, on la libère. Le force layout reprend le contrôle.
@@ -406,13 +409,17 @@ function nodeDbClick(d) {
  * MENU                                                          *
  ******************************************************************/
 
+// Event quand on clic sur supprimer un noeud.
 $("#menu-node-delete").click(function () {
-   removeNode(selectedNode);
+   removeNode(d3.select(selectedNode).datum());
 });
 
+// Event quand on clic sur valider les modifications.
 $("#menu-node-validate").click(function () {
-   selectedNode.name = $("#menu-node-selected-name").val();
-   update();
+    var nodeText = d3.select(selectedNode).select("text");
+    var nodeData = d3.select(selectedNode).datum();
+    nodeData.name = $("#menu-node-selected-name").val();
+    nodeText.text($("#menu-node-selected-name").val());
 });
 
 /******************************************************************
