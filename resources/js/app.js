@@ -7,13 +7,14 @@ var intersect = svgIntersections.intersect;
 var shape = svgIntersections.shape;
 
 // Variables globales
-var width = $(document).width();
-var height = $(document).height();
-var linkDistance = 250;
+var width = $("#svg-container").width();
+var height = $("#svg-container").height();
+var linkDistance = 300;
 var nodeWidth = 120;
-var nodeHeight = 80;
+var nodeHeight = 50;
 var colors = d3.scale.category10();
 var nodes, links, linkLabels;
+var selectedNode;
 
 /******************************************************************
  * DONNEES                                                        *
@@ -56,11 +57,11 @@ var dataset = {
 
 // Création de l'élément SVG conteneur.
 var svg = d3
-    .select("body")
+    .select("#svg-container")
     .append("svg")
     .attr({
         "width": width,
-        "height": height
+        "height": height,
     });
 
 // Création d'un marker en forme de flèche (définition).
@@ -90,7 +91,7 @@ var force = d3.layout.force()
     .links(dataset.links)
     .size([width, height])
     .linkDistance(linkDistance)
-    .charge(-800)
+    .charge(-1000)
     .theta(0.1)
     .gravity(0.05);
 
@@ -170,7 +171,9 @@ function update() {
         .append("rect")
         .attr({
             "width": nodeWidth,
-            "height": nodeHeight
+            "height": nodeHeight,
+            "rx": 10,
+            "ry": 10
         })
         .style("fill", function (d, i) {
             return colors(i);
@@ -324,6 +327,18 @@ function getMaxLinkId() {
  * EVENTS                                                         *
  ******************************************************************/
 
+$(window).resize(function() {
+    width = $("#svg-container").width();
+    height = $("#svg-container").height();
+    svg.attr({
+        "width": width,
+        "height": height,
+    });
+    force.size([width, height]);
+    force.start();
+});
+
+
 // Event lancé lorsque les cartes bougent (drag, gravité, force...).
 function forceTick() {
     // Mise à jour du positionnement des cartes.
@@ -376,14 +391,29 @@ function nodeDragStart(d) {
 }
 
 // TODO : enregistrement des positions après un drag.
-function nodeDragEnd() {
-    console.log(this);
+function nodeDragEnd(d) {
+    selectedNode = d;
+    console.log(selectedNode);
+    $("#menu-node-selected-name").val(d.name);
 }
 
 // Lorque l'on doule clic sur une carte, on la libère. Le force layout reprend le contrôle.
 function nodeDbClick(d) {
     d3.select(this).classed("fixed", d.fixed = false);
 }
+
+/******************************************************************
+ * MENU                                                          *
+ ******************************************************************/
+
+$("#menu-node-delete").click(function () {
+   removeNode(selectedNode);
+});
+
+$("#menu-node-validate").click(function () {
+   selectedNode.name = $("#menu-node-selected-name").val();
+   update();
+});
 
 /******************************************************************
  * TESTS                                                          *
