@@ -15,6 +15,12 @@ html {
         width: 20%;
         height: 100%;
         float: left;
+        #menu-node {
+          display: none;
+        }
+        #menu-link {
+          display: none;
+        }
         h2 {
           padding: 10px;
           font-size: 18px;

@@ -14,7 +14,7 @@ var nodeWidth = 120;
 var nodeHeight = 50;
 var colors = d3.scale.category10();
 var nodes, links, linkLabels;
-var selectedNode;
+var selectedNode = null, selectedLink = null;
 
 /******************************************************************
  * DONNEES                                                        *
@@ -166,6 +166,7 @@ function update() {
         .attr("transform", function (d) {
             return "translate(" + d.x + "," + d.y + ")";
         })
+        .on("click", function() { d3.event.stopPropagation(); }) // Stop la propagation sur window.
         .call(force.drag);
     nodes
         .append("rect")
@@ -226,6 +227,16 @@ function update() {
 
     // Lorqu'on double clic sur une carte, on la libère.
     nodes.on("dblclick", nodeDbClick);
+}
+
+// Style appliqué à un noeud quand il est sélectionné.
+function nodeSelection(node) {
+    d3.select(node).select("rect").attr({"stroke": "red", "stroke-width": 2});
+}
+
+// Fonction utilisée pour rétablir le style par défaut d'une carte.
+function nodeDefault(node) {
+    d3.select(node).select("rect").attr("stroke", "none");
 }
 
 /******************************************************************
@@ -324,20 +335,8 @@ function getMaxLinkId() {
 }
 
 /******************************************************************
- * EVENTS                                                         *
+ * SVG EVENTS                                                         *
  ******************************************************************/
-
-$(window).resize(function() {
-    width = $("#svg-container").width();
-    height = $("#svg-container").height();
-    svg.attr({
-        "width": width,
-        "height": height,
-    });
-    force.size([width, height]);
-    force.start();
-});
-
 
 // Event lancé lorsque les cartes bougent (drag, gravité, force...).
 function forceTick() {
@@ -385,14 +384,38 @@ function forceTick() {
     });
 }
 
-// Lorque l'on commence à bouger une carte, on la fixe.
+// Event appelé quand on redimensione la fenêtre.
+$(window).resize(function() {
+    width = $("#svg-container").width();
+    height = $("#svg-container").height();
+    svg.attr({
+        "width": width,
+        "height": height,
+    });
+    force.size([width, height]);
+    force.start();
+});
+
+// Event appelé quand l'utilisateur click sur la fenêtre en dehors des liens et des noeuds.
+$("#svg-container").click(function () {
+    if(selectedNode != null) {
+        nodeDefault(selectedNode);
+        selectedNode = null;
+        updateSelectedNodeMenu(selectedNode);
+    }
+});
+
+// Lorque l'on commence à bouger une carte, on la fixe, la sélecionne...
 function nodeDragStart(d) {
-    d3.select(this).classed("fixed", d.fixed = true);
+    d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
+
+    // On met l'ancienne carte sélectionnée sans contour, la nouvelle est entourée en rouge.
     if(selectedNode != null)
-        d3.select(selectedNode).select("rect").attr("stroke", "none");
+        nodeDefault(selectedNode);
     selectedNode = this;
-    d3.select(selectedNode).select("rect").attr({"stroke": "red", "stroke-width": 3});
-    $("#menu-node-selected-name").val(d.name);
+    nodeSelection(selectedNode);
+
+    updateSelectedNodeMenu(selectedNode);
 }
 
 // TODO : enregistrement des positions après un drag.
@@ -406,8 +429,24 @@ function nodeDbClick(d) {
 }
 
 /******************************************************************
- * MENU                                                          *
+ * MENU                                                           *
  ******************************************************************/
+
+// Fonction de mise à jour du menu d'édition du noeud sélectionné.
+function updateSelectedNodeMenu(node) {
+    var nameInput = $("#menu-node-selected-name");
+    var nodeMenu = $("#menu-node");
+
+    if(node == null) {
+        nodeMenu.fadeOut();
+    } else {
+        var d3Node = d3.select(node).datum();
+        nameInput.val(d3Node.name);
+        nodeMenu.fadeIn();
+    }
+}
+
+// MENU EVENTS
 
 // Event quand on clic sur supprimer un noeud.
 $("#menu-node-delete").click(function () {
@@ -420,6 +459,21 @@ $("#menu-node-validate").click(function () {
     var nodeData = d3.select(selectedNode).datum();
     nodeData.name = $("#menu-node-selected-name").val();
     nodeText.text($("#menu-node-selected-name").val());
+});
+
+/******************************************************************
+ * RACCOURCIS CLAVIER EVENTS                                      *
+ ******************************************************************/
+
+// Permet de supprimer un lien ou une carte avec la touche "delete".
+$(window).keyup(function (e) {
+    if(e.keyCode == 46) { // Bouton delete
+        if(selectedNode != null) {
+            removeNode(d3.select(selectedNode).datum());
+            selectedNode = null;
+            updateSelectedNodeMenu(selectedNode);
+        }
+    }
 });
 
 /******************************************************************
