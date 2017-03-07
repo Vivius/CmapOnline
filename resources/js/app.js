@@ -403,8 +403,9 @@ setTimeout(function () {
 
 // Suppression d'un noeud et de ses relations à la volée.
 setTimeout(function () {
-    console.log("Suppression de C++");
+    console.log("Suppression de C++ et C");
     removeNode(getNodeById(0));
+    removeNode(getNodeById(1));
 }, 5000);
 
 // Suppression d'un lien unique à la volée.
