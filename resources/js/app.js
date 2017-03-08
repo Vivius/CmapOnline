@@ -496,7 +496,7 @@ function nodeDragStart(d) {
 
 // TODO : enregistrement des positions après un drag.
 function nodeDragEnd(d) {
-    console.log(this);
+    $("#menu-node-selected-name")[0].focus();
 }
 
 /**
@@ -551,12 +551,22 @@ $("#menu-node-validate").click(function () {
  ******************************************************************/
 
 $(window).keyup(function (e) {
-    if(e.keyCode == 46) { // Bouton delete
-        if(selectedNode != null) {
-            removeNode(d3.select(selectedNode).datum());
-            selectedNode = null;
-            updateSelectedNodeMenu(selectedNode);
-        }
+    switch (e.keyCode) {
+        // Bouton DELETE
+        case 46 :
+            if(selectedNode != null) {
+                removeNode(d3.select(selectedNode).datum());
+                selectedNode = null;
+                updateSelectedNodeMenu(selectedNode);
+            }
+            break;
+        // Bouton ENTRER
+        case 13 :
+            var nodeName = $("#menu-node-selected-name");
+            if(nodeName.is(":focus")) {
+                editNodeLabel(selectedNode, nodeName.val());
+            }
+            break;
     }
 });
 
