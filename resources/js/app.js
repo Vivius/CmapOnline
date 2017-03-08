@@ -6,7 +6,10 @@ import svgIntersections from 'svg-intersections';
 var intersect = svgIntersections.intersect;
 var shape = svgIntersections.shape;
 
-// Variables globales
+////////////////////////////////
+// VARIABLES GLOBALES ///////
+//////////////////////////
+
 var width = $("#svg-container").width();
 var height = $("#svg-container").height();
 var linkDistance = 300;
@@ -20,7 +23,6 @@ var selectedNode = null, selectedLink = null;
  * DONNEES                                                        *
  ******************************************************************/
 
-// Données à représenter.
 var dataset = {
     nodes: [
         {id: 0, name: "C++"},
@@ -95,13 +97,17 @@ var force = d3.layout.force()
     .theta(0.1)
     .gravity(0.05);
 
-// Force events.
+// Force events
 force.drag().on("dragstart", nodeDragStart); // Drag des cartes conceptuelles.
-force.drag().on("dragend", nodeDragEnd);
+force.drag().on("dragend", nodeDragEnd); // Event de fin de drag.
 force.on("tick", forceTick); // Evénement tick du force layout.
 
-update();
+update(); // Premier affichage du graphe.
 
+/**
+ * Permet de mettre à jour l'ensemble de l'affichage du graphe en fonction des données définies dans le dataset.
+ * Permet aussi bien d'ajouter les nouveaux liens et noeuds que de supprimer ceux qui ne se trouvent plus dans les données.
+ */
 function update() {
     // Rafraichissement du force layout avec les données existentes.
     force.start();
@@ -152,6 +158,7 @@ function update() {
             return '#link-' + i
         })
         .text(function (d, i) {
+            // TODO : afficher l'étiquette du lien par rapport aux données.
             return 'label ' + i
         });
 
@@ -166,7 +173,7 @@ function update() {
         .attr("transform", function (d) {
             return "translate(" + d.x + "," + d.y + ")";
         })
-        .on("click", function() { d3.event.stopPropagation(); }) // Stop la propagation sur window.
+        .on("click", function() { d3.event.stopPropagation(); }) // Stop la propagation de l'event click.
         .call(force.drag);
     nodes
         .append("rect")
@@ -197,8 +204,8 @@ function update() {
     links = svg.selectAll(".link");
     linkLabels = svg.selectAll(".link-label");
 
-    // La suppression des problème provoque un bug uniquement sur firefox.
-    // On préfère donc ici les laisser dans le DOM en les laissant invisibles.
+    // La suppression provoque un bug uniquement sur firefox.
+    // On préfère donc ici laisser les labels vides dans le DOM car ils sont invisibles.
     if(!bowser.gecko) {
         linkLabels
             .data(dataset.links, function (d) {
@@ -229,13 +236,23 @@ function update() {
     nodes.on("dblclick", nodeDbClick);
 }
 
-// Style appliqué à un noeud quand il est sélectionné.
-function nodeSelection(node) {
+////////////////////////////////
+// STYLES ///////////////////
+//////////////////////////
+
+/**
+ * Style appliqué à un noeud quand il est sélectionné.
+ * @param node DOM_object
+ */
+function nodeSelectionStyle(node) {
     d3.select(node).select("rect").attr({"stroke": "red", "stroke-width": 2});
 }
 
-// Fonction utilisée pour rétablir le style par défaut d'une carte.
-function nodeDefault(node) {
+/**
+ * Fonction utilisée pour rétablir le style par défaut d'une carte.
+ * @param node DOM_object
+ */
+function nodeDefaultStyle(node) {
     d3.select(node).select("rect").attr("stroke", "none");
 }
 
@@ -243,7 +260,11 @@ function nodeDefault(node) {
  * FONCTIONS DE MANIPULATION DU GRAPHE                            *
  ******************************************************************/
 
-// Supprime le noeud passé en paramètre du graphe.
+/**
+ * Supprime le noeud passé en paramètre du graphe ainsi que les liens qui le lient.
+ * Met également à jour l'affichage.
+ * @param node d3_node_datum
+ */
 function removeNode(node) {
     var linksToDelete = [];
 
@@ -258,19 +279,29 @@ function removeNode(node) {
     update();
 }
 
-// Supprime le noeud passé en paramètre du graphe.
+/**
+ * Supprime le lien passé en paramètre du graphe et met en jour l'affichage.
+ * @param link d3_node_datum
+ */
 function removeLink(link) {
     dataset.links.splice(dataset.links.indexOf(link), 1);
     update();
 }
 
-// Ajoute le noeud passé en paramètre au graphe.
+/**
+ * Ajoute le noeud passé en paramètre au graphe et met à jour l'affichage.
+ * @param node d3_node_datum
+ */
 function addNode(node) {
     dataset.nodes.push(node);
     update();
 }
 
-// Ajoute une relation entre les noeuds passés en paramètre.
+/**
+ * Ajoute une relation entre les noeuds passés en paramètre et met ensuite à jour l'affichage.
+ * @param fromNode d3_node_datum
+ * @param toNode d3_node_datum
+ */
 function addLink(fromNode, toNode) {
     var iFrom = dataset.nodes.indexOf(fromNode);
     var iTo = dataset.nodes.indexOf(toNode);
@@ -278,7 +309,24 @@ function addLink(fromNode, toNode) {
     update();
 }
 
-// Permet de trouver en lien en fonction des noeuds soource et target donnés en paramètre.
+/**
+ * Modifie le label d'une carte du graphe (met à jour l'affichage et les données).
+ * @param node DOM_object
+ * @param newLabel String
+ */
+function editNodeLabel(node, newLabel) {
+    var nodeText = d3.select(node).select("text");
+    var nodeData = d3.select(node).datum();
+    nodeData.name = newLabel;
+    nodeText.text(newLabel);
+}
+
+/**
+ * Permet de trouver en lien en fonction des noeuds source et target donnés en paramètre.
+ * @param sourceNode d3_node_datum
+ * @param targetNode d3_node_datum
+ * @returns d3_link_datum
+ */
 function findLink(sourceNode, targetNode) {
     var link = null;
     $.each(dataset.links, function (i, val) {
@@ -288,7 +336,11 @@ function findLink(sourceNode, targetNode) {
     return link;
 }
 
-// Retourne un noeud grâce à son ID.
+/**
+ * Retourne un noeud grâce à son ID.
+ * @param id int
+ * @returns d3_node_datum
+ */
 function getNodeById(id) {
     var node = null;
     $.each(dataset.nodes, function (i, val) {
@@ -298,7 +350,11 @@ function getNodeById(id) {
     return node;
 }
 
-// Retourne un lien grâce à son ID.
+/**
+ * Retourne un lien grâce à son ID.
+ * @param id
+ * @returns d3_link_datum
+ */
 function getLinkById(id) {
     var link = null;
     $.each(dataset.nodes, function (i, val) {
@@ -308,7 +364,11 @@ function getLinkById(id) {
     return link;
 }
 
-// Retourne l'ID max des noeuds.
+/**
+ * Retourne l'ID max des noeuds.
+ * Cette fonction va disparaitre quand les noeuds auront un ID définit par la BDD.
+ * @returns int
+ */
 function getMaxNodeId() {
     if(dataset.nodes.length > 0)
         var max = dataset.nodes[0].id;
@@ -321,7 +381,11 @@ function getMaxNodeId() {
     return max;
 }
 
-// Retourne l'ID max des liens.
+/**
+ * Retourne l'ID max des liens.
+ * Cette fonction va disparaitre quand les liens auront un ID définit par la BDD.
+ * @returns int
+ */
 function getMaxLinkId() {
     if(dataset.links.length > 0)
         var max = dataset.links[0].id;
@@ -335,10 +399,12 @@ function getMaxLinkId() {
 }
 
 /******************************************************************
- * SVG EVENTS                                                         *
+ * SVG EVENTS                                                     *
  ******************************************************************/
 
-// Event lancé lorsque les cartes bougent (drag, gravité, force...).
+/**
+ * Event lancé lorsque les cartes bougent (drag, gravité, force...).
+ */
 function forceTick() {
     // Mise à jour du positionnement des cartes.
     nodes.attr("transform", function (d) {
@@ -361,7 +427,7 @@ function forceTick() {
         }
     });
 
-    // Mise à jour des labels placés sur les arrêtes.
+    // Mise à jour de la position des labels placés sur les arrêtes.
     linkLabels.attr('transform', function (d) {
         if (d.target.x < d.source.x) {
             var bbox = this.getBBox();
@@ -373,7 +439,7 @@ function forceTick() {
         }
     });
 
-    // Aligne le label des liens au centre.
+    // Aligne le label des liens en leur centre.
     linkLabels.attr("dx", function () {
         var linkId = d3.select(this).select("textPath").attr("xlink:href");
         var link = $(linkId)[0];
@@ -384,7 +450,11 @@ function forceTick() {
     });
 }
 
-// Event appelé quand on redimensione la fenêtre.
+/**
+ * Event appelé lorque la fenêtre est redimensionnée.
+ * Permet de recalculer la taille du svg et du force layout.
+ * Les SVGs auront peut-être une taille fixe à l'avenir pour qu'ils sont compatibles avec tous les types d'écrans.
+ */
 $(window).resize(function() {
     width = $("#svg-container").width();
     height = $("#svg-container").height();
@@ -396,24 +466,30 @@ $(window).resize(function() {
     force.start();
 });
 
-// Event appelé quand l'utilisateur click sur la fenêtre en dehors des liens et des noeuds.
+/**
+ * Event appelé quand l'utilisateur click sur la fenêtre (en dehors des liens et des noeuds).
+ * Permet de déselectionner un noeud ou un lien si tel était le cas.
+ */
 $("#svg-container").click(function () {
     if(selectedNode != null) {
-        nodeDefault(selectedNode);
+        nodeDefaultStyle(selectedNode);
         selectedNode = null;
         updateSelectedNodeMenu(selectedNode);
     }
 });
 
-// Lorque l'on commence à bouger une carte, on la fixe, la sélecionne...
+/**
+ * Lorque l'on commence à bouger une carte, on la fixe et on applique le style de sélection...
+ * @param d
+ */
 function nodeDragStart(d) {
     d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
 
     // On met l'ancienne carte sélectionnée sans contour, la nouvelle est entourée en rouge.
     if(selectedNode != null)
-        nodeDefault(selectedNode);
+        nodeDefaultStyle(selectedNode);
     selectedNode = this;
-    nodeSelection(selectedNode);
+    nodeSelectionStyle(selectedNode);
 
     updateSelectedNodeMenu(selectedNode);
 }
@@ -423,7 +499,10 @@ function nodeDragEnd(d) {
     console.log(this);
 }
 
-// Lorque l'on doule clic sur une carte, on la libère. Le force layout reprend le contrôle.
+/**
+ * Lorque l'on doule clic sur une carte, on la libère. Le force layout reprend le contrôle par la suite.
+ * @param d
+ */
 function nodeDbClick(d) {
     d3.select(this).classed("fixed", d.fixed = false);
 }
@@ -432,7 +511,10 @@ function nodeDbClick(d) {
  * MENU                                                           *
  ******************************************************************/
 
-// Fonction de mise à jour du menu d'édition du noeud sélectionné.
+/**
+ * Fonction de mise à jour du menu d'édition du noeud sélectionné.
+ * @param node DOM_object
+ */
 function updateSelectedNodeMenu(node) {
     var nameInput = $("#menu-node-selected-name");
     var nodeMenu = $("#menu-node");
@@ -446,26 +528,28 @@ function updateSelectedNodeMenu(node) {
     }
 }
 
-// MENU EVENTS
+////////////////////////////////
+// MENU EVENTS //////////////
+//////////////////////////
 
-// Event quand on clic sur supprimer un noeud.
+/**
+ * Event quand on clic sur supprimer un noeud.
+ */
 $("#menu-node-delete").click(function () {
    removeNode(d3.select(selectedNode).datum());
 });
 
-// Event quand on clic sur valider les modifications.
+/**
+ * Event quand on clic sur valider les modifications.
+ */
 $("#menu-node-validate").click(function () {
-    var nodeText = d3.select(selectedNode).select("text");
-    var nodeData = d3.select(selectedNode).datum();
-    nodeData.name = $("#menu-node-selected-name").val();
-    nodeText.text($("#menu-node-selected-name").val());
+    editNodeLabel(selectedNode, $("#menu-node-selected-name").val());
 });
 
 /******************************************************************
- * RACCOURCIS CLAVIER EVENTS                                      *
+ * RACCOURCIS CLAVIER                                             *
  ******************************************************************/
 
-// Permet de supprimer un lien ou une carte avec la touche "delete".
 $(window).keyup(function (e) {
     if(e.keyCode == 46) { // Bouton delete
         if(selectedNode != null) {
