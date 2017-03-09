@@ -14,7 +14,7 @@ html {
       #menu {
         width: 20%;
         height: 100%;
-        float: left;
+        float: right;
         #menu-node {
           display: none;
         }
@@ -42,7 +42,7 @@ html {
       #svg-container {
         width: 80%;
         height: 100%;
-        float: right;
+        float: left;
         overflow: hidden;
         .node {
           &:hover {
