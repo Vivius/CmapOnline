@@ -57,14 +57,18 @@ var dataset = {
  * AFFICHAGE DU GRAPHE                                            *
  ******************************************************************/
 
-// Création de l'élément SVG conteneur.
+// Création de l'élément SVG conteneur. Application d'un effet de zoom comme Google Maps.
 var svg = d3
     .select("#svg-container")
     .append("svg")
     .attr({
         "width": width,
-        "height": height,
-    });
+        "height": height
+    })
+    .call(d3.behavior.zoom().on("zoom", function () {
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
+    }))
+    .append("g");
 
 // Création d'un marker en forme de flèche (définition).
 svg
@@ -483,6 +487,8 @@ $("#svg-container").click(function () {
  * @param d
  */
 function nodeDragStart(d) {
+    d3.event.sourceEvent.stopPropagation();
+
     d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
 
     // On met l'ancienne carte sélectionnée sans contour, la nouvelle est entourée en rouge.
