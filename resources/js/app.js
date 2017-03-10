@@ -209,7 +209,7 @@ function update() {
     linkLabels = svg.selectAll(".link-label");
 
     // La suppression provoque un bug uniquement sur firefox.
-    // On préfère donc ici laisser les labels vides dans le DOM car ils sont invisibles.
+    // On préfère donc ici laisser les labels en invisible dans le DOM.
     if(!bowser.gecko) {
         linkLabels
             .data(dataset.links, function (d) {
@@ -217,6 +217,13 @@ function update() {
             })
             .exit()
             .remove();
+    } else {
+        linkLabels
+            .data(dataset.links, function (d) {
+                return d.id;
+            })
+            .exit()
+            .attr("visibility", "hidden ");
     }
     links
         .data(dataset.links, function (d) {
