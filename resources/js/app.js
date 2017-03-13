@@ -497,6 +497,7 @@ function nodeDragEnd(d) {
  * @param d
  */
 function nodeDbClick(d) {
+    d3.event.stopPropagation(); // Stop l'event zoom lors du double clic.
     d3.select(this).classed("fixed", d.fixed = false);
 }
 
