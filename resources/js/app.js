@@ -25,31 +25,41 @@ var selectedNode = null, selectedLink = null;
 
 var dataset = {
     nodes: [
-        {id: 0, name: "C++"},
-        {id: 1, name: "C"},
-        {id: 2, name: "Javascript"},
-        {id: 3, name: "C#"},
-        {id: 4, name: "Java"},
-        {id: 5, name: "Smalltalk"},
-        {id: 6, name: "PHP"},
-        {id: 7, name: "LISP"},
-        {id: 8, name: "Ruby"},
-        {id: 9, name: "Python"}
+        {id: 0, name: "Langage de prog.", type: "concept"},
+        {id: 1, name: "Procédural", type: "concept"},
+        {id: 2, name: "Orienté objet", type: "concept"},
+        {id: 3, name: "Fonctionnel", type: "concept"},
+        {id: 4, name: "Prototypé", type: "concept"},
+
+        {id: 5, name: "C", type: "instance"},
+        {id: 6, name: "C++", type: "instance"},
+        {id: 7, name: "LISP", type: "instance"},
+        {id: 8, name: "C#", type: "instance"},
+        {id: 9, name: "Javascript", type: "instance"},
+        {id: 10, name: "PHP", type: "instance"},
+        {id: 11, name: "Fortran", type: "instance"},
+        {id: 12, name: "Scala", type: "instance"},
+        {id: 13, name: "Java", type: "instance"},
+        {id: 14, name: "Smalltalk", type: "instance"},
+        {id: 15, name: "Brain Fuck", type: "instance"}
     ],
     links: [
-        {id: 0, source: 0, target: 1},
-        {id: 1, source: 0, target: 2},
-        {id: 2, source: 0, target: 3},
-        {id: 3, source: 0, target: 4},
-        {id: 4, source: 1, target: 5},
-        {id: 5, source: 2, target: 5},
-        {id: 6, source: 2, target: 5},
-        {id: 7, source: 3, target: 4},
-        {id: 8, source: 5, target: 8},
-        {id: 9, source: 5, target: 9},
-        {id: 10, source: 6, target: 7},
-        {id: 11, source: 7, target: 8},
-        {id: 12, source: 8, target: 9}
+        {id: 0, source: 1, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 1, source: 1, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 2, source: 2, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 3, source: 3, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 4, source: 4, target: 0, label: "est un langage de prog.", type: "is a"},
+
+        {id: 5, source: 5, target: 1, label: "est procédural", type: "instance of"},
+        {id: 6, source: 6, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 7, source: 7, target: 3, label: "est fonctionnel", type: "instance of"},
+        {id: 8, source: 8, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 9, source: 9, target: 4, label: "est prototypé", type: "instance of"},
+        {id: 10, source: 10, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 11, source: 11, target: 1, label: "est procédural", type: "instance of"},
+        {id: 12, source: 12, target: 3, label: "est fonctionnel", type: "instance of"},
+        {id: 13, source: 13, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 14, source: 14, target: 2, label: "est orienté objet", type: "instance of"}
     ]
 };
 
@@ -118,38 +128,29 @@ function update() {
 
     // Liens entre les neouds (arrêtes).
     links = svg.selectAll(".link")
-        .data(dataset.links, function (d) {
-            return d.id;
-        })
+        .data(dataset.links, function (d) { return d.id; })
         .enter()
         .append('path')
         .attr({
-            'd': function (d) {
-                return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y + 'Z'
-            },
+            'd': function (d) { return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y + 'Z' },
             'class': 'link',
-            'fill-opacity': 0.5,
-            'stroke-opacity': 0.5,
+            'fill-opacity': 1,
+            'stroke-opacity': 1,
             'fill': '#000000',
             'stroke': '#000000',
-            'id': function (d, i) {
-                return 'link-' + i
-            },
+            'id': function (d, i) { return 'link-' + i },
             'marker-end': 'url(#fleche)'
-        });
+        })
+        .style("stroke-dasharray", function (d) { return d.type == "instance of" ? ("3, 3") : ("1, 0"); });
 
     // Création des labels posés sur les arrêtes.
     linkLabels = svg.selectAll(".link-label")
-        .data(dataset.links, function (d) {
-            return d.id;
-        })
+        .data(dataset.links, function (d) { return d.id; })
         .enter()
         .append('text')
         .attr({
             'class': 'link-label',
-            'id': function (d, i) {
-                return 'link-label-' + i
-            },
+            'id': function (d, i) { return 'link-label-' + i },
             'dx': linkDistance / 2,
             'dy': -10,
             'font-size': 13,
@@ -158,25 +159,16 @@ function update() {
         });
     linkLabels
         .append('textPath')
-        .attr('xlink:href', function (d, i) {
-            return '#link-' + i
-        })
-        .text(function (d, i) {
-            // TODO : afficher l'étiquette du lien par rapport aux données.
-            return 'label ' + i
-        });
+        .attr('xlink:href', function (d, i) { return '#link-' + i })
+        .text(function (d) { return d.label; });
 
     // Création des cartes (noeuds).
     nodes = svg.selectAll(".node")
-        .data(dataset.nodes, function (d) {
-            return d.id;
-        })
+        .data(dataset.nodes, function (d) { return d.id; })
         .enter()
         .append("g")
         .attr("class", "node")
-        .attr("transform", function (d) {
-            return "translate(" + d.x + "," + d.y + ")";
-        })
+        .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
         .on("click", function() { d3.event.stopPropagation(); }) // Stop la propagation de l'event click.
         .call(force.drag);
     nodes
@@ -184,12 +176,10 @@ function update() {
         .attr({
             "width": nodeWidth,
             "height": nodeHeight,
-            "rx": 10,
-            "ry": 10
+            "rx": function (d) { return d.type == "concept" ? 10 : 0; },
+            "ry": function (d) { return d.type == "concept" ? 10 : 0; }
         })
-        .style("fill", function (d, i) {
-            return colors(i);
-        });
+        .style("fill", function (d) { return d.type == "concept" ? "#cdcdcd" : "#878787"; });
     nodes
         .append("text")
         .attr({
@@ -199,9 +189,7 @@ function update() {
             "stroke": "#000000",
             "text-anchor": "middle"
         })
-        .text(function (d) {
-            return d.name;
-        });
+        .text(function (d) { return d.name; });
 
     // Mise à jour des références avec les nouveaux noeuds ajoutés.
     nodes = svg.selectAll('.node');
@@ -212,29 +200,21 @@ function update() {
     // On préfère donc ici laisser les labels en invisible dans le DOM.
     if(!bowser.gecko) {
         linkLabels
-            .data(dataset.links, function (d) {
-                return d.id;
-            })
+            .data(dataset.links, function (d) { return d.id; })
             .exit()
             .remove();
     } else {
         linkLabels
-            .data(dataset.links, function (d) {
-                return d.id;
-            })
+            .data(dataset.links, function (d) { return d.id; })
             .exit()
             .attr("visibility", "hidden ");
     }
     links
-        .data(dataset.links, function (d) {
-            return d.id;
-        })
+        .data(dataset.links, function (d) { return d.id; })
         .exit()
         .remove();
     nodes
-        .data(dataset.nodes, function (d) {
-            return d.id;
-        })
+        .data(dataset.nodes, function (d) { return d.id; })
         .exit()
         .remove();
 
@@ -587,6 +567,7 @@ $(window).keyup(function (e) {
  * TESTS                                                          *
  ******************************************************************/
 
+/*
 // Ajout d'un noeud à la volée.
 setTimeout(function () {
     console.log("Ajout de Linux (" + (getMaxNodeId() + 1) + ")");
@@ -610,3 +591,4 @@ setTimeout(function () {
     console.log("Suppression du lien entre Java et C#");
     removeLink(findLink(getNodeById(3), getNodeById(4)));
 }, 7000);
+*/
