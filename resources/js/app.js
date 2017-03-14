@@ -179,7 +179,7 @@ function update() {
             "rx": function (d) { return d.type == "concept" ? 10 : 0; },
             "ry": function (d) { return d.type == "concept" ? 10 : 0; }
         })
-        .style("fill", function (d) { return d.type == "concept" ? "#cdcdcd" : "#878787"; });
+        .style("fill", function (d) { return d.type == "concept" ? "#FFC44E" : "#AF813C"; });
     nodes
         .append("text")
         .attr({
@@ -286,6 +286,7 @@ function removeLink(link) {
 function addNode(node) {
     dataset.nodes.push(node);
     update();
+    return node;
 }
 
 /**
@@ -538,6 +539,23 @@ $("#menu-node-delete").click(function () {
  */
 $("#menu-node-validate").click(function () {
     editNodeLabel(selectedNode, $("#menu-node-selected-name").val());
+});
+
+$(".node-creator").click(function () {
+    var newNode = addNode({
+       "id": getMaxNodeId() + 1,
+        "name": "Undefined",
+        "type": function (id) { return id == "concept-creator" ? "concept" : "instance"; } ($(this).attr("id")),
+        "x": 0,
+        "y": 0
+    });
+    if(selectedNode != null)
+        nodeDefaultStyle(selectedNode);
+    selectedNode = d3.selectAll(".node").filter(function (d) { return d.id == newNode.id; }).node();
+    nodeSelectionStyle(selectedNode);
+    updateSelectedNodeMenu(selectedNode);
+    $("#menu-node-selected-name").val("");
+    $("#menu-node-selected-name")[0].focus();
 });
 
 /******************************************************************

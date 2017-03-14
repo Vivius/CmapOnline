@@ -22,6 +22,20 @@ html {
         #menu-link {
           display: none;
         }
+        #menu-tools {
+          text-align: center;
+          .node-creator {
+            display: inline-block;
+            width: 40%;
+            height: 50px;
+            background-color: #aeff9e;
+            line-height: 50px;
+            font-weight: bold;
+            &:hover {
+              cursor: pointer;
+            }
+          }
+        }
         h2 {
           padding: 10px;
           font-size: 18px;
