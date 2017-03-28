@@ -143,7 +143,7 @@ function update() {
             'stroke-opacity': 1,
             'fill': '#000000',
             'stroke': '#000000',
-            'id': function (d, i) { return 'link-' + i },
+            'id': function (d, i) { return 'link-' + d.id },
             'marker-end': 'url(#fleche)'
         })
         .style("stroke-dasharray", function (d) { return d.type == "instance of" ? ("3, 3") : ("1, 0"); })
@@ -156,7 +156,7 @@ function update() {
         .append('text')
         .attr({
             'class': 'link-label',
-            'id': function (d, i) { return 'link-label-' + i },
+            'id': function (d, i) { return 'link-label-' + d.id },
             'dx': linkDistance / 2,
             'dy': -10,
             'font-size': 13,
@@ -166,7 +166,7 @@ function update() {
         .on("click", function (d) { linkClick(d)});
     linkLabels
         .append('textPath')
-        .attr('xlink:href', function (d, i) { return '#link-' + i })
+        .attr('xlink:href', function (d, i) { return '#link-' + d.id })
         .text(function (d) { return d.label; });
 
     // Création des cartes (noeuds).
@@ -320,7 +320,7 @@ function addNode(node) {
 function addLink(fromNode, toNode) {
     var iFrom = dataset.nodes.indexOf(fromNode);
     var iTo = dataset.nodes.indexOf(toNode);
-    var newID = getMaxLinkId() + 1;
+    var newID = new Date().valueOf();
     dataset.links.push({id: newID, source: iFrom, target: iTo});
     update();
     return getLinkById(newID);
@@ -396,37 +396,11 @@ function getLinkById(id) {
 }
 
 /**
- * Retourne l'ID max des noeuds.
- * Cette fonction va disparaitre quand les noeuds auront un ID définit par la BDD.
- * @returns int
+ * Retourne un identifiant unique basé sur le temps.
+ * @returns string
  */
-function getMaxNodeId() {
-    if(dataset.nodes.length > 0)
-        var max = dataset.nodes[0].id;
-    else
-        return 0;
-    $.each(dataset.nodes, function (i, node) {
-        if(node.id > max)
-            max = node.id;
-    });
-    return max;
-}
-
-/**
- * Retourne l'ID max des liens.
- * Cette fonction va disparaitre quand les liens auront un ID définit par la BDD.
- * @returns int
- */
-function getMaxLinkId() {
-    if(dataset.links.length > 0)
-        var max = dataset.links[0].id;
-    else
-        return 0;
-    $.each(dataset.links, function (i, link) {
-        if(link.id > max)
-            max = link.id;
-    });
-    return max;
+function uniquID() {
+    return new Date().valueOf();
 }
 
 /******************************************************************
@@ -537,7 +511,7 @@ function nodeDragStart(d) {
 }
 
 // TODO : enregistrement des positions après un drag.
-function nodeDragEnd(d) {
+function nodeDragEnd() {
     $("#menu-node-selected-name")[0].focus();
 }
 
@@ -673,8 +647,8 @@ $("#menu-node-validate").click(function () {
  */
 $(".node-creator").click(function () {
     var newNode = addNode({
-        "id": getMaxNodeId() + 1,
-        "name": "Undefined",
+        "id": uniquID(),
+        "name": "NEW !",
         "type": function (id) { return id == "concept-creator" ? "concept" : "instance"; } ($(this).attr("id")),
         "x": 0,
         "y": 0
