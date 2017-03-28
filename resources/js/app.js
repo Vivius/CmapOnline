@@ -141,7 +141,8 @@ function update() {
             'id': function (d, i) { return 'link-' + i },
             'marker-end': 'url(#fleche)'
         })
-        .style("stroke-dasharray", function (d) { return d.type == "instance of" ? ("3, 3") : ("1, 0"); });
+        .style("stroke-dasharray", function (d) { return d.type == "instance of" ? ("3, 3") : ("1, 0"); })
+        .on("click", function (d) { linkClick(d)});
 
     // Création des labels posés sur les arrêtes.
     linkLabels = svg.selectAll(".link-label")
@@ -156,7 +157,8 @@ function update() {
             'font-size': 13,
             'fill': '#000000',
             "text-anchor": "middle"
-        });
+        })
+        .on("click", function (d) { linkClick(d)});
     linkLabels
         .append('textPath')
         .attr('xlink:href', function (d, i) { return '#link-' + i })
@@ -245,6 +247,22 @@ function nodeSelectionStyle(node) {
  */
 function nodeDefaultStyle(node) {
     d3.select(node).select("rect").attr("stroke", "none");
+}
+
+/**
+ * Permet d'appliquer un style de sélection à un lien.
+ * @param link DOM_object
+ */
+function linkSelectionStyle (link) {
+    d3.select(link).attr({"fill": "#ff0004", "stroke": "#ff0004"});
+}
+
+/**
+ * Applique le style par défaut au lien donné.
+ * @param link DOM_object
+ */
+function linkDefaultStyle(link) {
+    d3.select(link).attr({"fill": "#000", "stroke": "#000"});
 }
 
 /******************************************************************
@@ -468,6 +486,11 @@ $("#svg-container").click(function () {
         selectedNode = null;
         updateSelectedNodeMenu(selectedNode);
     }
+    if(selectedLink != null) {
+        linkDefaultStyle(selectedLink);
+        selectedLink = null;
+        updateSelectedLinkMenu(selectedLink);
+    }
 });
 
 /**
@@ -476,16 +499,20 @@ $("#svg-container").click(function () {
  */
 function nodeDragStart(d) {
     d3.event.sourceEvent.stopPropagation();
-
     d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
 
     // On met l'ancienne carte sélectionnée sans contour, la nouvelle est entourée en rouge.
     if(selectedNode != null)
         nodeDefaultStyle(selectedNode);
+    if(selectedLink != null)
+        linkDefaultStyle(selectedLink);
+
+    selectedLink = null;
     selectedNode = this;
     nodeSelectionStyle(selectedNode);
 
     updateSelectedNodeMenu(selectedNode);
+    updateSelectedLinkMenu(selectedLink);
 }
 
 // TODO : enregistrement des positions après un drag.
@@ -500,6 +527,27 @@ function nodeDragEnd(d) {
 function nodeDbClick(d) {
     d3.event.stopPropagation(); // Stop l'event zoom lors du double clic.
     d3.select(this).classed("fixed", d.fixed = false);
+}
+
+/**
+ * Callback appelée lorque l'on clic sur un des liens du graphe.
+ * @param link
+ */
+function linkClick(link) {
+    d3.event.stopPropagation();
+
+    if(selectedLink != null)
+        linkDefaultStyle(selectedLink);
+    if(selectedNode != null)
+        nodeDefaultStyle(selectedNode);
+
+    selectedNode = null;
+    selectedLink = d3.selectAll(".link").filter(function (d) { return d.id == link.id; }).node();
+    linkSelectionStyle(selectedLink);
+
+    updateSelectedLinkMenu(selectedLink);
+    updateSelectedNodeMenu(selectedNode);
+    $("#menu-link-selected-label")[0].focus();
 }
 
 /******************************************************************
@@ -523,15 +571,34 @@ function updateSelectedNodeMenu(node) {
     }
 }
 
+function updateSelectedLinkMenu (link) {
+    var labelInput = $("#menu-link-selected-label");
+    var linkMenu = $("#menu-link");
+    var linkSelectedType = $("#menu-link-link-type");
+
+    if(link == null) {
+        linkMenu.fadeOut();
+    } else {
+        var d3Link = d3.select(link).datum();
+        labelInput.val(d3Link.label);
+        linkSelectedType.val(d3Link.type);
+        linkMenu.fadeIn();
+    }
+}
+
 ////////////////////////////////
 // MENU EVENTS //////////////
 //////////////////////////
+
+// Noeuds
 
 /**
  * Event quand on clic sur supprimer un noeud.
  */
 $("#menu-node-delete").click(function () {
    removeNode(d3.select(selectedNode).datum());
+   selectedNode = null;
+   updateSelectedNodeMenu(selectedNode);
 });
 
 /**
@@ -541,6 +608,9 @@ $("#menu-node-validate").click(function () {
     editNodeLabel(selectedNode, $("#menu-node-selected-name").val());
 });
 
+/**
+ * Fonction exécutée quand l'utilisateur crée une nouvelle carte conceptuelle.
+ */
 $(".node-creator").click(function () {
     var newNode = addNode({
        "id": getMaxNodeId() + 1,
@@ -558,6 +628,49 @@ $(".node-creator").click(function () {
     $("#menu-node-selected-name")[0].focus();
 });
 
+// Liens
+
+$(".link-creator").click(function () {
+    console.log("Edition du lien");
+});
+
+$("#menu-link-link-type").change(function () {
+    var d3Link = d3.select(selectedLink);
+    var linkData = d3Link.datum();
+
+    switch ($(this).val()) {
+        case "instance of":
+            if(linkData.source.type != "instance") {
+                alert("Contrainte de liaison !");
+                return;
+            }
+            break;
+        case "is a":
+            if(linkData.source.type != "concept" || linkData.target.type != "concept") {
+                alert("Contrainte de liaison !");
+                return;
+            }
+            break;
+        default: return;
+    }
+
+    linkData.type = $(this).val();
+    d3Link.style("stroke-dasharray", function () { return linkData.type == "instance of" ? ("3, 3") : ("1, 0"); });
+});
+
+$("#menu-link-validate").click(function () {
+    var d3Link = d3.select(selectedLink);
+    var linkData = d3Link.datum();
+    linkData.label = $("#menu-link-selected-label").val();
+    d3.selectAll("textPath").filter(function (d) { return linkData.id == d.id; }).text(linkData.label);
+});
+
+$("#menu-link-delete").click(function () {
+    var linkData = d3.select(selectedLink).datum();
+    removeLink(linkData);
+    update();
+});
+
 /******************************************************************
  * RACCOURCIS CLAVIER                                             *
  ******************************************************************/
@@ -570,13 +683,30 @@ $(window).keyup(function (e) {
                 removeNode(d3.select(selectedNode).datum());
                 selectedNode = null;
                 updateSelectedNodeMenu(selectedNode);
+                break;
+            }
+            if(selectedLink != null) {
+                var linkData = d3.select(selectedLink).datum();
+                removeLink(linkData);
+                update();
+                break;
             }
             break;
         // Bouton ENTRER
         case 13 :
-            var nodeName = $("#menu-node-selected-name");
-            if(nodeName.is(":focus")) {
-                editNodeLabel(selectedNode, nodeName.val());
+            if(selectedNode != null) {
+                var nodeName = $("#menu-node-selected-name");
+                if(nodeName.is(":focus")) {
+                    editNodeLabel(selectedNode, nodeName.val());
+                }
+                break;
+            }
+            if(selectedLink != null) {
+                var d3Link = d3.select(selectedLink);
+                var linkData = d3Link.datum();
+                linkData.label = $("#menu-link-selected-label").val();
+                d3.selectAll("textPath").filter(function (d) { return linkData.id == d.id; }).text(linkData.label);
+                break;
             }
             break;
     }

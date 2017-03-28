@@ -13,9 +13,11 @@
         <div id="menu">
             <div id="menu-tools">
                 <h2>Cartes</h2>
-                <div class="node-creator" id="concept-creator">CONCEPT</div>
-                <div class="node-creator" id="instance-creator">INSTANCE</div>
+                <button class="node-creator" id="concept-creator">CONCEPT</button>
+                <button class="node-creator" id="instance-creator">INSTANCE</button>
                 <h2>Liens</h2>
+                <button class="link-creator" id="is-a-creator">IS A</button>
+                <button class="link-creator" id="instance-of-creator">INSTANCE OF</button>
             </div>
             <div id="menu-node">
                 <h2>Carte sélectionnée</h2>
@@ -25,7 +27,13 @@
             </div>
             <div id="menu-link">
                 <h2>Lien sélectionné</h2>
-                <p>...</p>
+                <input type="text" id="menu-link-selected-label" placeholder="Label">
+                <select id="menu-link-link-type">
+                    <option value="instance of">instance of</option>
+                    <option value="is a" selected>is a</option>
+                </select>
+                <input type="button" id="menu-link-validate" value="Valider">
+                <input type="button" id="menu-link-delete" value="Supprimer">
             </div>
         </div>
     </main>
