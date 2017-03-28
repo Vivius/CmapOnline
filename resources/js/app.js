@@ -44,7 +44,6 @@ var dataset = {
         {id: 15, name: "Brain Fuck", type: "instance"}
     ],
     links: [
-        {id: 0, source: 1, target: 0, label: "est un langage de prog.", type: "is a"},
         {id: 1, source: 1, target: 0, label: "est un langage de prog.", type: "is a"},
         {id: 2, source: 2, target: 0, label: "est un langage de prog.", type: "is a"},
         {id: 3, source: 3, target: 0, label: "est un langage de prog.", type: "is a"},
@@ -64,7 +63,7 @@ var dataset = {
 };
 
 /******************************************************************
- * AFFICHAGE DU GRAPHE                                            *
+ * AFFICHAGE / CREATION DU GRAPHE                                 *
  ******************************************************************/
 
 // Création de l'élément SVG conteneur. Application d'un effet de zoom comme Google Maps.
@@ -332,6 +331,20 @@ function editNodeLabel(node, newLabel) {
 }
 
 /**
+ * Modifie le label d'un lien du graphe (met à jour l'affichage et les données).
+ * @param link DOM_object
+ * @param newLabel String
+ */
+function editLinkLabel(link, newLabel) {
+    var d3Link = d3.select(link);
+    var linkData = d3Link.datum();
+    // Mise à jour des données.
+    linkData.label = newLabel;
+    // Mise à jour de l'affichage du texte du lien actuel.
+    d3.selectAll("textPath").filter(function (d) { return linkData.id == d.id; }).text(linkData.label);
+}
+
+/**
  * Permet de trouver en lien en fonction des noeuds source et target donnés en paramètre.
  * @param sourceNode d3_node_datum
  * @param targetNode d3_node_datum
@@ -463,7 +476,6 @@ function forceTick() {
 /**
  * Event appelé lorque la fenêtre est redimensionnée.
  * Permet de recalculer la taille du svg et du force layout.
- * Les SVGs auront peut-être une taille fixe à l'avenir pour qu'ils sont compatibles avec tous les types d'écrans.
  */
 $(window).resize(function() {
     width = $("#svg-container").width();
@@ -502,15 +514,14 @@ function nodeDragStart(d) {
     d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
 
     // On met l'ancienne carte sélectionnée sans contour, la nouvelle est entourée en rouge.
-    if(selectedNode != null)
-        nodeDefaultStyle(selectedNode);
-    if(selectedLink != null)
-        linkDefaultStyle(selectedLink);
+    if(selectedNode != null) nodeDefaultStyle(selectedNode);
+    if(selectedLink != null) linkDefaultStyle(selectedLink);
 
     selectedLink = null;
     selectedNode = this;
     nodeSelectionStyle(selectedNode);
 
+    // Mise à jour de l'affichage du menu.
     updateSelectedNodeMenu(selectedNode);
     updateSelectedLinkMenu(selectedLink);
 }
@@ -536,15 +547,15 @@ function nodeDbClick(d) {
 function linkClick(link) {
     d3.event.stopPropagation();
 
-    if(selectedLink != null)
-        linkDefaultStyle(selectedLink);
-    if(selectedNode != null)
-        nodeDefaultStyle(selectedNode);
+    // Rétablissement des styles par défaut pour les anciennes sélections.
+    if(selectedLink != null) linkDefaultStyle(selectedLink);
+    if(selectedNode != null) nodeDefaultStyle(selectedNode);
 
     selectedNode = null;
     selectedLink = d3.selectAll(".link").filter(function (d) { return d.id == link.id; }).node();
     linkSelectionStyle(selectedLink);
 
+    // Mise à jour de l'affichage du menu.
     updateSelectedLinkMenu(selectedLink);
     updateSelectedNodeMenu(selectedNode);
     $("#menu-link-selected-label")[0].focus();
@@ -571,6 +582,10 @@ function updateSelectedNodeMenu(node) {
     }
 }
 
+/**
+ * Mise à jour de l'affiche du menu d'édition deu lien sélectionné.
+ * @param link DOM_object
+ */
 function updateSelectedLinkMenu (link) {
     var labelInput = $("#menu-link-selected-label");
     var linkMenu = $("#menu-link");
@@ -590,7 +605,9 @@ function updateSelectedLinkMenu (link) {
 // MENU EVENTS //////////////
 //////////////////////////
 
-// Noeuds
+////////////
+// Noeuds //
+////////////
 
 /**
  * Event quand on clic sur supprimer un noeud.
@@ -613,62 +630,81 @@ $("#menu-node-validate").click(function () {
  */
 $(".node-creator").click(function () {
     var newNode = addNode({
-       "id": getMaxNodeId() + 1,
+        "id": getMaxNodeId() + 1,
         "name": "Undefined",
         "type": function (id) { return id == "concept-creator" ? "concept" : "instance"; } ($(this).attr("id")),
         "x": 0,
         "y": 0
     });
-    if(selectedNode != null)
-        nodeDefaultStyle(selectedNode);
+
+    if(selectedLink != null) linkDefaultStyle(selectedLink);
+    selectedLink = null;
+    if(selectedNode != null) nodeDefaultStyle(selectedNode);
     selectedNode = d3.selectAll(".node").filter(function (d) { return d.id == newNode.id; }).node();
     nodeSelectionStyle(selectedNode);
+
     updateSelectedNodeMenu(selectedNode);
+    updateSelectedLinkMenu(selectedLink);
+    // Préparation de l'input pour la première modification du nom de la carte.
     $("#menu-node-selected-name").val("");
     $("#menu-node-selected-name")[0].focus();
 });
 
-// Liens
+///////////
+// Liens //
+///////////
 
+/**
+ * Appelé lors du clic sur un des boutons de création de lien.
+ */
 $(".link-creator").click(function () {
-    console.log("Edition du lien");
+    console.log("Création d'un lien");
 });
 
+/**
+ * Modification du type d'un lien.
+ * TODO : prendre en charge plus de types de lien.
+ */
 $("#menu-link-link-type").change(function () {
-    var d3Link = d3.select(selectedLink);
-    var linkData = d3Link.datum();
+    var d3Link = d3.select(selectedLink); // D3 DOM object
+    var linkData = d3Link.datum(); // D3 Datum object
+    var error = false;
 
+    // Application de contraintes sur les liaisons.
     switch ($(this).val()) {
         case "instance of":
-            if(linkData.source.type != "instance") {
-                alert("Contrainte de liaison !");
-                return;
-            }
+            if(linkData.source.type != "instance") error = true;
             break;
         case "is a":
-            if(linkData.source.type != "concept" || linkData.target.type != "concept") {
-                alert("Contrainte de liaison !");
-                return;
-            }
+            if(linkData.source.type != "concept" || linkData.target.type != "concept") error = true;
             break;
-        default: return;
+        default: error = true;
+    }
+
+    if(error) {
+        alert("Contrainte de liaison.");
+        $(this).val(linkData.type);
+        return;
     }
 
     linkData.type = $(this).val();
     d3Link.style("stroke-dasharray", function () { return linkData.type == "instance of" ? ("3, 3") : ("1, 0"); });
 });
 
+/**
+ * Valide le nouveau label appliqué au lien sélectionné.
+ */
 $("#menu-link-validate").click(function () {
-    var d3Link = d3.select(selectedLink);
-    var linkData = d3Link.datum();
-    linkData.label = $("#menu-link-selected-label").val();
-    d3.selectAll("textPath").filter(function (d) { return linkData.id == d.id; }).text(linkData.label);
+    editLinkLabel(selectedLink, $("#menu-link-selected-label").val());
 });
 
+/**
+ * Clic sur le bouton supprimer du menu d'édition des liens.
+ */
 $("#menu-link-delete").click(function () {
-    var linkData = d3.select(selectedLink).datum();
-    removeLink(linkData);
-    update();
+    removeLink(d3.select(selectedLink).datum());
+    selectedLink = null;
+    updateSelectedLinkMenu(selectedLink);
 });
 
 /******************************************************************
@@ -679,33 +715,32 @@ $(window).keyup(function (e) {
     switch (e.keyCode) {
         // Bouton DELETE
         case 46 :
+            // Suppression noeud.
             if(selectedNode != null) {
                 removeNode(d3.select(selectedNode).datum());
                 selectedNode = null;
                 updateSelectedNodeMenu(selectedNode);
                 break;
             }
+            // Suppresion lien.
             if(selectedLink != null) {
-                var linkData = d3.select(selectedLink).datum();
-                removeLink(linkData);
-                update();
+                removeLink(d3.select(selectedLink).datum());
+                selectedLink = null;
+                updateSelectedLinkMenu(selectedLink);
                 break;
             }
             break;
         // Bouton ENTRER
         case 13 :
+            // Mise à jour nom noeud.
             if(selectedNode != null) {
                 var nodeName = $("#menu-node-selected-name");
-                if(nodeName.is(":focus")) {
-                    editNodeLabel(selectedNode, nodeName.val());
-                }
+                if(nodeName.is(":focus")) editNodeLabel(selectedNode, nodeName.val());
                 break;
             }
             if(selectedLink != null) {
-                var d3Link = d3.select(selectedLink);
-                var linkData = d3Link.datum();
-                linkData.label = $("#menu-link-selected-label").val();
-                d3.selectAll("textPath").filter(function (d) { return linkData.id == d.id; }).text(linkData.label);
+                var linkName = $("#menu-link-selected-label");
+                if(linkName.is(":focus")) editLinkLabel(selectedLink, linkName.val());
                 break;
             }
             break;
