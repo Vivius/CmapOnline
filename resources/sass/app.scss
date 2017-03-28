@@ -14,13 +14,45 @@ html {
       #menu {
         width: 20%;
         height: 100%;
-        float: left;
-      }
-      #svg-container {
-        width: 80%;
-        height: 100%;
         float: right;
         overflow: hidden;
+        #menu-node {
+          display: none;
+        }
+        #menu-link {
+          display: none;
+        }
+        h2 {
+          padding: 10px;
+          font-size: 18px;
+          font-weight: bold;
+        }
+        input
+        {
+          text-align: center;
+          padding: 5px;
+          margin-bottom: 5px;
+          display: block;
+          width: 100%;
+          border: 0;
+          &:hover {
+            cursor: pointer;
+          }
+        }
+      }
+      #svg-container {
+        overflow: hidden;
+        width: 80%;
+        height: 100%;
+        float: left;
+        .node {
+          &:hover {
+            cursor: grab;
+          }
+          &:active {
+            cursor: grabbing;
+          }
+        }
       }
     }
   }

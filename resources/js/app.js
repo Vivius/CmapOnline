@@ -6,7 +6,10 @@ import svgIntersections from 'svg-intersections';
 var intersect = svgIntersections.intersect;
 var shape = svgIntersections.shape;
 
-// Variables globales
+////////////////////////////////
+// VARIABLES GLOBALES ///////
+//////////////////////////
+
 var width = $("#svg-container").width();
 var height = $("#svg-container").height();
 var linkDistance = 300;
@@ -14,40 +17,49 @@ var nodeWidth = 120;
 var nodeHeight = 50;
 var colors = d3.scale.category10();
 var nodes, links, linkLabels;
-var selectedNode;
+var selectedNode = null, selectedLink = null;
 
 /******************************************************************
  * DONNEES                                                        *
  ******************************************************************/
 
-// Données à représenter.
 var dataset = {
     nodes: [
-        {id: 0, name: "C++"},
-        {id: 1, name: "C"},
-        {id: 2, name: "Javascript"},
-        {id: 3, name: "C#"},
-        {id: 4, name: "Java"},
-        {id: 5, name: "Smalltalk"},
-        {id: 6, name: "PHP"},
-        {id: 7, name: "LISP"},
-        {id: 8, name: "Ruby"},
-        {id: 9, name: "Python"}
+        {id: 0, name: "Langage de prog.", type: "concept"},
+        {id: 1, name: "Procédural", type: "concept"},
+        {id: 2, name: "Orienté objet", type: "concept"},
+        {id: 3, name: "Fonctionnel", type: "concept"},
+        {id: 4, name: "Prototypé", type: "concept"},
+
+        {id: 5, name: "C", type: "instance"},
+        {id: 6, name: "C++", type: "instance"},
+        {id: 7, name: "LISP", type: "instance"},
+        {id: 8, name: "C#", type: "instance"},
+        {id: 9, name: "Javascript", type: "instance"},
+        {id: 10, name: "PHP", type: "instance"},
+        {id: 11, name: "Fortran", type: "instance"},
+        {id: 12, name: "Scala", type: "instance"},
+        {id: 13, name: "Java", type: "instance"},
+        {id: 14, name: "Smalltalk", type: "instance"},
+        {id: 15, name: "Brain Fuck", type: "instance"}
     ],
     links: [
-        {id: 0, source: 0, target: 1},
-        {id: 1, source: 0, target: 2},
-        {id: 2, source: 0, target: 3},
-        {id: 3, source: 0, target: 4},
-        {id: 4, source: 1, target: 5},
-        {id: 5, source: 2, target: 5},
-        {id: 6, source: 2, target: 5},
-        {id: 7, source: 3, target: 4},
-        {id: 8, source: 5, target: 8},
-        {id: 9, source: 5, target: 9},
-        {id: 10, source: 6, target: 7},
-        {id: 11, source: 7, target: 8},
-        {id: 12, source: 8, target: 9}
+        {id: 0, source: 1, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 1, source: 1, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 2, source: 2, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 3, source: 3, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 4, source: 4, target: 0, label: "est un langage de prog.", type: "is a"},
+
+        {id: 5, source: 5, target: 1, label: "est procédural", type: "instance of"},
+        {id: 6, source: 6, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 7, source: 7, target: 3, label: "est fonctionnel", type: "instance of"},
+        {id: 8, source: 8, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 9, source: 9, target: 4, label: "est prototypé", type: "instance of"},
+        {id: 10, source: 10, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 11, source: 11, target: 1, label: "est procédural", type: "instance of"},
+        {id: 12, source: 12, target: 3, label: "est fonctionnel", type: "instance of"},
+        {id: 13, source: 13, target: 2, label: "est orienté objet", type: "instance of"},
+        {id: 14, source: 14, target: 2, label: "est orienté objet", type: "instance of"}
     ]
 };
 
@@ -55,14 +67,18 @@ var dataset = {
  * AFFICHAGE DU GRAPHE                                            *
  ******************************************************************/
 
-// Création de l'élément SVG conteneur.
+// Création de l'élément SVG conteneur. Application d'un effet de zoom comme Google Maps.
 var svg = d3
     .select("#svg-container")
     .append("svg")
     .attr({
         "width": width,
-        "height": height,
-    });
+        "height": height
+    })
+    .call(d3.behavior.zoom().on("zoom", function () {
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
+    }))
+    .append("g");
 
 // Création d'un marker en forme de flèche (définition).
 svg
@@ -95,51 +111,46 @@ var force = d3.layout.force()
     .theta(0.1)
     .gravity(0.05);
 
-// Force events.
+// Force events
 force.drag().on("dragstart", nodeDragStart); // Drag des cartes conceptuelles.
-force.drag().on("dragend", nodeDragEnd);
+force.drag().on("dragend", nodeDragEnd); // Event de fin de drag.
 force.on("tick", forceTick); // Evénement tick du force layout.
 
-update();
+update(); // Premier affichage du graphe.
 
+/**
+ * Permet de mettre à jour l'ensemble de l'affichage du graphe en fonction des données définies dans le dataset.
+ * Permet aussi bien d'ajouter les nouveaux liens et noeuds que de supprimer ceux qui ne se trouvent plus dans les données.
+ */
 function update() {
     // Rafraichissement du force layout avec les données existentes.
     force.start();
 
     // Liens entre les neouds (arrêtes).
     links = svg.selectAll(".link")
-        .data(dataset.links, function (d) {
-            return d.id;
-        })
+        .data(dataset.links, function (d) { return d.id; })
         .enter()
         .append('path')
         .attr({
-            'd': function (d) {
-                return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y + 'Z'
-            },
+            'd': function (d) { return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y + 'Z' },
             'class': 'link',
-            'fill-opacity': 0.5,
-            'stroke-opacity': 0.5,
+            'fill-opacity': 1,
+            'stroke-opacity': 1,
             'fill': '#000000',
             'stroke': '#000000',
-            'id': function (d, i) {
-                return 'link-' + i
-            },
+            'id': function (d, i) { return 'link-' + i },
             'marker-end': 'url(#fleche)'
-        });
+        })
+        .style("stroke-dasharray", function (d) { return d.type == "instance of" ? ("3, 3") : ("1, 0"); });
 
     // Création des labels posés sur les arrêtes.
     linkLabels = svg.selectAll(".link-label")
-        .data(dataset.links, function (d) {
-            return d.id;
-        })
+        .data(dataset.links, function (d) { return d.id; })
         .enter()
         .append('text')
         .attr({
             'class': 'link-label',
-            'id': function (d, i) {
-                return 'link-label-' + i
-            },
+            'id': function (d, i) { return 'link-label-' + i },
             'dx': linkDistance / 2,
             'dy': -10,
             'font-size': 13,
@@ -148,36 +159,27 @@ function update() {
         });
     linkLabels
         .append('textPath')
-        .attr('xlink:href', function (d, i) {
-            return '#link-' + i
-        })
-        .text(function (d, i) {
-            return 'label ' + i
-        });
+        .attr('xlink:href', function (d, i) { return '#link-' + i })
+        .text(function (d) { return d.label; });
 
     // Création des cartes (noeuds).
     nodes = svg.selectAll(".node")
-        .data(dataset.nodes, function (d) {
-            return d.id;
-        })
+        .data(dataset.nodes, function (d) { return d.id; })
         .enter()
         .append("g")
         .attr("class", "node")
-        .attr("transform", function (d) {
-            return "translate(" + d.x + "," + d.y + ")";
-        })
+        .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
+        .on("click", function() { d3.event.stopPropagation(); }) // Stop la propagation de l'event click.
         .call(force.drag);
     nodes
         .append("rect")
         .attr({
             "width": nodeWidth,
             "height": nodeHeight,
-            "rx": 10,
-            "ry": 10
+            "rx": function (d) { return d.type == "concept" ? 10 : 0; },
+            "ry": function (d) { return d.type == "concept" ? 10 : 0; }
         })
-        .style("fill", function (d, i) {
-            return colors(i);
-        });
+        .style("fill", function (d) { return d.type == "concept" ? "#cdcdcd" : "#878787"; });
     nodes
         .append("text")
         .attr({
@@ -187,35 +189,32 @@ function update() {
             "stroke": "#000000",
             "text-anchor": "middle"
         })
-        .text(function (d) {
-            return d.name;
-        });
+        .text(function (d) { return d.name; });
 
     // Mise à jour des références avec les nouveaux noeuds ajoutés.
     nodes = svg.selectAll('.node');
     links = svg.selectAll(".link");
     linkLabels = svg.selectAll(".link-label");
 
-    // La suppression des problème provoque un bug uniquement sur firefox.
-    // On préfère donc ici les laisser dans le DOM en les laissant invisibles.
+    // La suppression provoque un bug uniquement sur firefox.
+    // On préfère donc ici laisser les labels en invisible dans le DOM.
     if(!bowser.gecko) {
         linkLabels
-            .data(dataset.links, function (d) {
-                return d.id;
-            })
+            .data(dataset.links, function (d) { return d.id; })
             .exit()
             .remove();
+    } else {
+        linkLabels
+            .data(dataset.links, function (d) { return d.id; })
+            .exit()
+            .attr("visibility", "hidden ");
     }
     links
-        .data(dataset.links, function (d) {
-            return d.id;
-        })
+        .data(dataset.links, function (d) { return d.id; })
         .exit()
         .remove();
     nodes
-        .data(dataset.nodes, function (d) {
-            return d.id;
-        })
+        .data(dataset.nodes, function (d) { return d.id; })
         .exit()
         .remove();
 
@@ -228,11 +227,35 @@ function update() {
     nodes.on("dblclick", nodeDbClick);
 }
 
+////////////////////////////////
+// STYLES ///////////////////
+//////////////////////////
+
+/**
+ * Style appliqué à un noeud quand il est sélectionné.
+ * @param node DOM_object
+ */
+function nodeSelectionStyle(node) {
+    d3.select(node).select("rect").attr({"stroke": "red", "stroke-width": 2});
+}
+
+/**
+ * Fonction utilisée pour rétablir le style par défaut d'une carte.
+ * @param node DOM_object
+ */
+function nodeDefaultStyle(node) {
+    d3.select(node).select("rect").attr("stroke", "none");
+}
+
 /******************************************************************
  * FONCTIONS DE MANIPULATION DU GRAPHE                            *
  ******************************************************************/
 
-// Supprime le noeud passé en paramètre du graphe.
+/**
+ * Supprime le noeud passé en paramètre du graphe ainsi que les liens qui le lient.
+ * Met également à jour l'affichage.
+ * @param node d3_node_datum
+ */
 function removeNode(node) {
     var linksToDelete = [];
 
@@ -247,19 +270,29 @@ function removeNode(node) {
     update();
 }
 
-// Supprime le noeud passé en paramètre du graphe.
+/**
+ * Supprime le lien passé en paramètre du graphe et met en jour l'affichage.
+ * @param link d3_node_datum
+ */
 function removeLink(link) {
     dataset.links.splice(dataset.links.indexOf(link), 1);
     update();
 }
 
-// Ajoute le noeud passé en paramètre au graphe.
+/**
+ * Ajoute le noeud passé en paramètre au graphe et met à jour l'affichage.
+ * @param node d3_node_datum
+ */
 function addNode(node) {
     dataset.nodes.push(node);
     update();
 }
 
-// Ajoute une relation entre les noeuds passés en paramètre.
+/**
+ * Ajoute une relation entre les noeuds passés en paramètre et met ensuite à jour l'affichage.
+ * @param fromNode d3_node_datum
+ * @param toNode d3_node_datum
+ */
 function addLink(fromNode, toNode) {
     var iFrom = dataset.nodes.indexOf(fromNode);
     var iTo = dataset.nodes.indexOf(toNode);
@@ -267,7 +300,24 @@ function addLink(fromNode, toNode) {
     update();
 }
 
-// Permet de trouver en lien en fonction des noeuds soource et target donnés en paramètre.
+/**
+ * Modifie le label d'une carte du graphe (met à jour l'affichage et les données).
+ * @param node DOM_object
+ * @param newLabel String
+ */
+function editNodeLabel(node, newLabel) {
+    var nodeText = d3.select(node).select("text");
+    var nodeData = d3.select(node).datum();
+    nodeData.name = newLabel;
+    nodeText.text(newLabel);
+}
+
+/**
+ * Permet de trouver en lien en fonction des noeuds source et target donnés en paramètre.
+ * @param sourceNode d3_node_datum
+ * @param targetNode d3_node_datum
+ * @returns d3_link_datum
+ */
 function findLink(sourceNode, targetNode) {
     var link = null;
     $.each(dataset.links, function (i, val) {
@@ -277,7 +327,11 @@ function findLink(sourceNode, targetNode) {
     return link;
 }
 
-// Retourne un noeud grâce à son ID.
+/**
+ * Retourne un noeud grâce à son ID.
+ * @param id int
+ * @returns d3_node_datum
+ */
 function getNodeById(id) {
     var node = null;
     $.each(dataset.nodes, function (i, val) {
@@ -287,7 +341,11 @@ function getNodeById(id) {
     return node;
 }
 
-// Retourne un lien grâce à son ID.
+/**
+ * Retourne un lien grâce à son ID.
+ * @param id
+ * @returns d3_link_datum
+ */
 function getLinkById(id) {
     var link = null;
     $.each(dataset.nodes, function (i, val) {
@@ -297,7 +355,11 @@ function getLinkById(id) {
     return link;
 }
 
-// Retourne l'ID max des noeuds.
+/**
+ * Retourne l'ID max des noeuds.
+ * Cette fonction va disparaitre quand les noeuds auront un ID définit par la BDD.
+ * @returns int
+ */
 function getMaxNodeId() {
     if(dataset.nodes.length > 0)
         var max = dataset.nodes[0].id;
@@ -310,7 +372,11 @@ function getMaxNodeId() {
     return max;
 }
 
-// Retourne l'ID max des liens.
+/**
+ * Retourne l'ID max des liens.
+ * Cette fonction va disparaitre quand les liens auront un ID définit par la BDD.
+ * @returns int
+ */
 function getMaxLinkId() {
     if(dataset.links.length > 0)
         var max = dataset.links[0].id;
@@ -324,22 +390,12 @@ function getMaxLinkId() {
 }
 
 /******************************************************************
- * EVENTS                                                         *
+ * SVG EVENTS                                                     *
  ******************************************************************/
 
-$(window).resize(function() {
-    width = $("#svg-container").width();
-    height = $("#svg-container").height();
-    svg.attr({
-        "width": width,
-        "height": height,
-    });
-    force.size([width, height]);
-    force.start();
-});
-
-
-// Event lancé lorsque les cartes bougent (drag, gravité, force...).
+/**
+ * Event lancé lorsque les cartes bougent (drag, gravité, force...).
+ */
 function forceTick() {
     // Mise à jour du positionnement des cartes.
     nodes.attr("transform", function (d) {
@@ -362,7 +418,7 @@ function forceTick() {
         }
     });
 
-    // Mise à jour des labels placés sur les arrêtes.
+    // Mise à jour de la position des labels placés sur les arrêtes.
     linkLabels.attr('transform', function (d) {
         if (d.target.x < d.source.x) {
             var bbox = this.getBBox();
@@ -374,7 +430,7 @@ function forceTick() {
         }
     });
 
-    // Aligne le label des liens au centre.
+    // Aligne le label des liens en leur centre.
     linkLabels.attr("dx", function () {
         var linkId = d3.select(this).select("textPath").attr("xlink:href");
         var link = $(linkId)[0];
@@ -385,40 +441,133 @@ function forceTick() {
     });
 }
 
-// Lorque l'on commence à bouger une carte, on la fixe.
+/**
+ * Event appelé lorque la fenêtre est redimensionnée.
+ * Permet de recalculer la taille du svg et du force layout.
+ * Les SVGs auront peut-être une taille fixe à l'avenir pour qu'ils sont compatibles avec tous les types d'écrans.
+ */
+$(window).resize(function() {
+    width = $("#svg-container").width();
+    height = $("#svg-container").height();
+    svg.attr({
+        "width": width,
+        "height": height,
+    });
+    force.size([width, height]);
+    force.start();
+});
+
+/**
+ * Event appelé quand l'utilisateur click sur la fenêtre (en dehors des liens et des noeuds).
+ * Permet de déselectionner un noeud ou un lien si tel était le cas.
+ */
+$("#svg-container").click(function () {
+    if(selectedNode != null) {
+        nodeDefaultStyle(selectedNode);
+        selectedNode = null;
+        updateSelectedNodeMenu(selectedNode);
+    }
+});
+
+/**
+ * Lorque l'on commence à bouger une carte, on la fixe et on applique le style de sélection...
+ * @param d
+ */
 function nodeDragStart(d) {
-    d3.select(this).classed("fixed", d.fixed = true);
+    d3.event.sourceEvent.stopPropagation();
+
+    d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
+
+    // On met l'ancienne carte sélectionnée sans contour, la nouvelle est entourée en rouge.
+    if(selectedNode != null)
+        nodeDefaultStyle(selectedNode);
+    selectedNode = this;
+    nodeSelectionStyle(selectedNode);
+
+    updateSelectedNodeMenu(selectedNode);
 }
 
 // TODO : enregistrement des positions après un drag.
 function nodeDragEnd(d) {
-    selectedNode = d;
-    console.log(selectedNode);
-    $("#menu-node-selected-name").val(d.name);
+    $("#menu-node-selected-name")[0].focus();
 }
 
-// Lorque l'on doule clic sur une carte, on la libère. Le force layout reprend le contrôle.
+/**
+ * Lorque l'on doule clic sur une carte, on la libère. Le force layout reprend le contrôle par la suite.
+ * @param d
+ */
 function nodeDbClick(d) {
     d3.select(this).classed("fixed", d.fixed = false);
 }
 
 /******************************************************************
- * MENU                                                          *
+ * MENU                                                           *
  ******************************************************************/
 
+/**
+ * Fonction de mise à jour du menu d'édition du noeud sélectionné.
+ * @param node DOM_object
+ */
+function updateSelectedNodeMenu(node) {
+    var nameInput = $("#menu-node-selected-name");
+    var nodeMenu = $("#menu-node");
+
+    if(node == null) {
+        nodeMenu.fadeOut();
+    } else {
+        var d3Node = d3.select(node).datum();
+        nameInput.val(d3Node.name);
+        nodeMenu.fadeIn();
+    }
+}
+
+////////////////////////////////
+// MENU EVENTS //////////////
+//////////////////////////
+
+/**
+ * Event quand on clic sur supprimer un noeud.
+ */
 $("#menu-node-delete").click(function () {
-   removeNode(selectedNode);
+   removeNode(d3.select(selectedNode).datum());
 });
 
+/**
+ * Event quand on clic sur valider les modifications.
+ */
 $("#menu-node-validate").click(function () {
-   selectedNode.name = $("#menu-node-selected-name").val();
-   update();
+    editNodeLabel(selectedNode, $("#menu-node-selected-name").val());
+});
+
+/******************************************************************
+ * RACCOURCIS CLAVIER                                             *
+ ******************************************************************/
+
+$(window).keyup(function (e) {
+    switch (e.keyCode) {
+        // Bouton DELETE
+        case 46 :
+            if(selectedNode != null) {
+                removeNode(d3.select(selectedNode).datum());
+                selectedNode = null;
+                updateSelectedNodeMenu(selectedNode);
+            }
+            break;
+        // Bouton ENTRER
+        case 13 :
+            var nodeName = $("#menu-node-selected-name");
+            if(nodeName.is(":focus")) {
+                editNodeLabel(selectedNode, nodeName.val());
+            }
+            break;
+    }
 });
 
 /******************************************************************
  * TESTS                                                          *
  ******************************************************************/
 
+/*
 // Ajout d'un noeud à la volée.
 setTimeout(function () {
     console.log("Ajout de Linux (" + (getMaxNodeId() + 1) + ")");
@@ -443,3 +592,4 @@ setTimeout(function () {
     console.log("Suppression du lien entre Java et C#");
     removeLink(findLink(getNodeById(3), getNodeById(4)));
 }, 7000);
+*/
