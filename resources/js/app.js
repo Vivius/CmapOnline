@@ -18,6 +18,12 @@ var nodeHeight = 50;
 var colors = d3.scale.category10();
 var nodes, links, linkLabels;
 var selectedNode = null, selectedLink = null;
+var linkEditionStatus = {
+    type: null,
+    source: null,
+    target: null,
+    enable: false
+};
 
 /******************************************************************
  * DONNEES                                                        *
@@ -314,8 +320,10 @@ function addNode(node) {
 function addLink(fromNode, toNode) {
     var iFrom = dataset.nodes.indexOf(fromNode);
     var iTo = dataset.nodes.indexOf(toNode);
-    dataset.links.push({id: getMaxLinkId() + 1, source: iFrom, target: iTo});
+    var newID = getMaxLinkId() + 1;
+    dataset.links.push({id: newID, source: iFrom, target: iTo});
     update();
+    return getLinkById(newID);
 }
 
 /**
@@ -380,7 +388,7 @@ function getNodeById(id) {
  */
 function getLinkById(id) {
     var link = null;
-    $.each(dataset.nodes, function (i, val) {
+    $.each(dataset.links, function (i, val) {
         if(val.id == id)
             link = val;
     });
@@ -422,7 +430,7 @@ function getMaxLinkId() {
 }
 
 /******************************************************************
- * SVG EVENTS                                                     *
+ * SVG EVENTS & TOOLS                                             *
  ******************************************************************/
 
 /**
@@ -524,6 +532,8 @@ function nodeDragStart(d) {
     // Mise à jour de l'affichage du menu.
     updateSelectedNodeMenu(selectedNode);
     updateSelectedLinkMenu(selectedLink);
+
+    editLink(linkEditionStatus, d3.select(selectedNode).datum());
 }
 
 // TODO : enregistrement des positions après un drag.
@@ -559,6 +569,39 @@ function linkClick(link) {
     updateSelectedLinkMenu(selectedLink);
     updateSelectedNodeMenu(selectedNode);
     $("#menu-link-selected-label")[0].focus();
+}
+
+/**
+ * Permet d'éditer un lien simplement en passant un objet de statut d'édition de lien et un noeud.
+ * La fonction détermine automatiquement si on doit procéder à une création de lien et sait s'il s'agit du premier ou du second appel (source, target...).
+ * @param linkEditionStatus linkEditionStatus_object
+ * @param node d3_datum
+ */
+function editLink(linkEditionStatus, node) {
+    if(linkEditionStatus.enable) {
+        if(linkEditionStatus.source == null) linkEditionStatus.source = node;
+        else if(linkEditionStatus.target == null) {
+            linkEditionStatus.target = node;
+            var newLink = addLink(linkEditionStatus.source, linkEditionStatus.target);
+
+            linkEditionStatus.enable = false;
+            linkEditionStatus.source = null;
+            linkEditionStatus.target = null;
+
+            nodeDefaultStyle(selectedNode);
+            selectedNode = null;
+            updateSelectedNodeMenu(selectedNode);
+
+            selectedLink = d3.selectAll(".link").filter(function (d) { return d.id == newLink.id; }).node();
+            linkSelectionStyle(selectedLink);
+            updateSelectedLinkMenu(selectedLink);
+            // Petite attente pour être sur que l'input n'est pas encore hidden.
+            setTimeout(function () { $("#menu-link-selected-label")[0].focus(); }, 500);
+        }
+    } else {
+        linkEditionStatus.source = null;
+        linkEditionStatus.target = null;
+    }
 }
 
 /******************************************************************
@@ -658,7 +701,7 @@ $(".node-creator").click(function () {
  * Appelé lors du clic sur un des boutons de création de lien.
  */
 $(".link-creator").click(function () {
-    console.log("Création d'un lien");
+    linkEditionStatus.enable = true;
 });
 
 /**
