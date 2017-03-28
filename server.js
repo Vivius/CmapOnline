@@ -29,8 +29,30 @@ app.use(function(req, res, next){
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
+var MongoClient = require("mongodb").MongoClient;
+MongoClient.connect("mongodb://localhost/CmapDb", function(error, db) {
+    if (error) return funcCallback(error);
+    console.log("Connecté à la base de données 'CmapDb' \n");
+
+
+    db.collection("nodes").find().toArray(function (error, results) {
+        if (error) throw error;
+
+        results.forEach(function(obj) {
+            console.log(
+                "ID_Object : "  + obj._id.toString() + "\n"+
+                "Nom : " + obj.name + "\n"+
+                "Type : " + obj.type + "\n"
+            );
+        });
+    });
+});
+
 io.on('connection', function(socket){
 
 });
+
+
+
 
 http.listen(8080);
