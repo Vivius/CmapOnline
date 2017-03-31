@@ -14,6 +14,11 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
+app.get("/getGraph/:id", function (req, res) {
+    console.log(req.params["id"]);
+    res.json({ graph: { nodes: {}, links: {} } });
+});
+
 //------------------------------------------------------------
 // ERRORS
 //------------------------------------------------------------
@@ -31,9 +36,13 @@ var io = require('socket.io')(http);
 
 io.on('connection', function(socket){
     socket.on("new-node", function (node) {
-        console.log(node);
+        console.log("ADD NODE : " + node.id);
         io.emit("new-node-response", node);
     });
+    socket.on("remove-node", function (node) {
+        console.log("REMOVE NODE : " + node.id);
+        io.emit("remove-node-response", node);
+    })
 });
 
 http.listen(8080);

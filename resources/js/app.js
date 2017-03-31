@@ -22,7 +22,8 @@ var linkEditionStatus = {
     type: null,
     source: null,
     target: null,
-    enable: false
+    enable: false,
+    button: null
 };
 
 /******************************************************************
@@ -626,7 +627,7 @@ function editLink(linkEditionStatus, node) {
             selectedNode = null;
             updateSelectedNodeMenu(selectedNode);
 
-            $(this).removeClass("selected");
+            linkEditionStatus.button.removeClass("selected");
         }
     } else {
         linkEditionStatus.source = null;
@@ -688,9 +689,11 @@ function updateSelectedLinkMenu (link) {
  * Event quand on clic sur supprimer un noeud.
  */
 $("#menu-node-delete").click(function () {
-   removeNode(d3.select(selectedNode).datum());
-   selectedNode = null;
-   updateSelectedNodeMenu(selectedNode);
+    var nodeData = d3.select(selectedNode).datum();
+    removeNode(nodeData);
+    socket.emit("remove-node", nodeData); // SOCKET EMIT
+    selectedNode = null;
+    updateSelectedNodeMenu(selectedNode);
 });
 
 /**
@@ -737,6 +740,7 @@ $(".node-creator").click(function () {
  */
 $(".link-creator").click(function () {
     linkEditionStatus.enable = true;
+    linkEditionStatus.button = $(this);
     switch ($(this).attr("id")) {
         case "ako-creator": linkEditionStatus.type = "ako"; break;
         case "instance-of-creator": linkEditionStatus.type = "instance of"; break;
@@ -834,7 +838,17 @@ $(window).keyup(function (e) {
  * Réception des noeuds ajoutés.
  */
 socket.on("new-node-response", function (node) {
-   addNode(node);
+    if(getNodeById(node.id) === null)
+        addNode(node);
+});
+
+/**
+ * Réception des noeuds à supprimer.
+ */
+socket.on("remove-node-response", function (node) {
+    removeNode(node);
+    selectedNode = null;
+    updateSelectedNodeMenu(selectedNode);
 });
 
 /******************************************************************
