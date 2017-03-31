@@ -30,7 +30,10 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 io.on('connection', function(socket){
-
+    socket.on("new-node", function (node) {
+        console.log(node);
+        io.emit("new-node-response", node);
+    });
 });
 
 http.listen(8080);

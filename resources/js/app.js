@@ -713,7 +713,7 @@ $(".node-creator").click(function () {
         "y": 0
     });
 
-    socket.emit("new-node", newNode);
+    socket.emit("new-node", {id: newNode.id, name: newNode.name, type: newNode.type, x: newNode.x, y: newNode.y, fixed: false});
 
     if(selectedLink !== null) linkDefaultStyle(selectedLink);
     selectedLink = null;
@@ -824,6 +824,17 @@ $(window).keyup(function (e) {
             }
             break;
     }
+});
+
+/******************************************************************
+ * SOCKETS                                                        *
+ ******************************************************************/
+
+/**
+ * Réception des noeuds ajoutés.
+ */
+socket.on("new-node-response", function (node) {
+   addNode(node);
 });
 
 /******************************************************************
