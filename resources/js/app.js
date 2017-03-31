@@ -846,9 +846,11 @@ socket.on("new-node-response", function (node) {
  * Réception des noeuds à supprimer.
  */
 socket.on("remove-node-response", function (node) {
-    removeNode(node);
-    selectedNode = null;
-    updateSelectedNodeMenu(selectedNode);
+    if(getNodeById(node.id) !== null) {
+        removeNode(node);
+        selectedNode = null;
+        updateSelectedNodeMenu(selectedNode);
+    }
 });
 
 /******************************************************************
