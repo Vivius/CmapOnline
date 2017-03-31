@@ -203,7 +203,7 @@ function update() {
             "stroke": "#000000",
             "text-anchor": "middle"
         })
-        .text(function (d) { return d.name; });
+        .text(function (d) { return d.type === "concept" ? "< " + d.name + " >" : d.name; });
 
     // Mise à jour des références avec les nouveaux noeuds ajoutés.
     nodes = svg.selectAll('.node');
@@ -347,13 +347,18 @@ function canCreateLink(nodeSource, nodeTarget, linkType) {
     var validation = true;
     switch (linkType) {
         case "instance of":
-            if(nodeSource.type !== "object") validation = false;
+            if(nodeSource.type !== "object" || nodeTarget.type !== "concept")
+                validation = false;
             break;
         case "ako":
-            if(nodeSource.type !== "concept" || nodeTarget.type !== "concept") validation = false;
+            if(nodeSource.type !== "concept" || nodeTarget.type !== "concept")
+                validation = false;
             break;
-        case "association": validation = true; break;
-        default: validation = true;
+        case "association":
+            if(nodeSource.type !== "concept" || nodeTarget.type !== "concept")
+                validation = false;
+            break;
+        default: validation = false;
     }
     return validation;
 }
@@ -368,6 +373,16 @@ function editNodeLabel(node, newLabel) {
     var nodeData = d3.select(node).datum();
     nodeData.name = newLabel;
     nodeText.text(newLabel);
+}
+
+/**
+ * Permet d'éditer le commentaire du noeud passé en paramètre.
+ * @param node
+ * @param newComment
+ */
+function editNodeComment(node, newComment) {
+    var nodeData = d3.select(node).datum();
+    nodeData.comment = newComment;
 }
 
 /**
@@ -627,6 +642,7 @@ function editLink(linkEditionStatus, node) {
  */
 function updateSelectedNodeMenu(node) {
     var nameInput = $("#menu-node-selected-name");
+    var commentTextArea = $("#menu-node-selected-comment");
     var nodeMenu = $("#menu-node");
 
     if(node === null) {
@@ -634,6 +650,7 @@ function updateSelectedNodeMenu(node) {
     } else {
         var d3Node = d3.select(node).datum();
         nameInput.val(d3Node.name);
+        commentTextArea.val(d3Node.comment);
         nodeMenu.fadeIn();
     }
 }
@@ -679,6 +696,7 @@ $("#menu-node-delete").click(function () {
  */
 $("#menu-node-validate").click(function () {
     editNodeLabel(selectedNode, $("#menu-node-selected-name").val());
+    editNodeComment(selectedNode, $("#menu-node-selected-comment").val());
 });
 
 /**
@@ -687,7 +705,7 @@ $("#menu-node-validate").click(function () {
 $(".node-creator").click(function () {
     var newNode = addNode({
         "id": uniquID(),
-        "name": "NEW !",
+        "name": "New",
         "type": function (id) { return id === "concept-creator" ? "concept" : "object"; } ($(this).attr("id")),
         "x": 0,
         "y": 0
