@@ -41,6 +41,9 @@ html {
             background-color: #aeff9e;
             line-height: 50px;
             font-weight: bold;
+            .selected {
+              background-color: red;
+            }
             &:hover {
               cursor: pointer;
             }
@@ -54,6 +57,9 @@ html {
             background-color: #afd0ff;
             line-height: 50px;
             font-weight: bold;
+            .selected {
+              background-color: red;
+            }
             &:hover {
               cursor: pointer;
             }

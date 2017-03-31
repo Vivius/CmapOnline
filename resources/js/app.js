@@ -1,6 +1,5 @@
 import $ from 'jquery';
 import * as d3 from "d3";
-import io from 'socket.io-client';
 import bowser from 'bowser';
 import svgIntersections from 'svg-intersections';
 var intersect = svgIntersections.intersect;
@@ -10,6 +9,7 @@ var shape = svgIntersections.shape;
 // VARIABLES GLOBALES ///////
 //////////////////////////
 
+var socket = require('socket.io-client')('http://localhost:8080');
 var width = $("#svg-container").width();
 var height = $("#svg-container").height();
 var linkDistance = 300;
@@ -625,6 +625,8 @@ function editLink(linkEditionStatus, node) {
             nodeDefaultStyle(selectedNode);
             selectedNode = null;
             updateSelectedNodeMenu(selectedNode);
+
+            $(this).removeClass("selected");
         }
     } else {
         linkEditionStatus.source = null;
@@ -711,6 +713,8 @@ $(".node-creator").click(function () {
         "y": 0
     });
 
+    socket.emit("new-node", newNode);
+
     if(selectedLink !== null) linkDefaultStyle(selectedLink);
     selectedLink = null;
     if(selectedNode !== null) nodeDefaultStyle(selectedNode);
@@ -738,6 +742,7 @@ $(".link-creator").click(function () {
         case "instance-of-creator": linkEditionStatus.type = "instance of"; break;
         case "association-creator": linkEditionStatus.type = "association"; break;
     }
+    $(this).addClass("selected");
 });
 
 /**
