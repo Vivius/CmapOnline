@@ -37,23 +37,23 @@ var dataset = {
         {id: 3, name: "Fonctionnel", type: "concept"},
         {id: 4, name: "Prototypé", type: "concept"},
 
-        {id: 5, name: "C", type: "instance"},
-        {id: 6, name: "C++", type: "instance"},
-        {id: 7, name: "LISP", type: "instance"},
-        {id: 8, name: "C#", type: "instance"},
-        {id: 9, name: "Javascript", type: "instance"},
-        {id: 10, name: "PHP", type: "instance"},
-        {id: 11, name: "Fortran", type: "instance"},
-        {id: 12, name: "Scala", type: "instance"},
-        {id: 13, name: "Java", type: "instance"},
-        {id: 14, name: "Smalltalk", type: "instance"},
-        {id: 15, name: "Brain Fuck", type: "instance"}
+        {id: 5, name: "C", type: "object"},
+        {id: 6, name: "C++", type: "object"},
+        {id: 7, name: "LISP", type: "object"},
+        {id: 8, name: "C#", type: "object"},
+        {id: 9, name: "Javascript", type: "object"},
+        {id: 10, name: "PHP", type: "object"},
+        {id: 11, name: "Fortran", type: "object"},
+        {id: 12, name: "Scala", type: "object"},
+        {id: 13, name: "Java", type: "object"},
+        {id: 14, name: "Smalltalk", type: "object"},
+        {id: 15, name: "Brain Fuck", type: "object"}
     ],
     links: [
-        {id: 1, source: 1, target: 0, label: "est un langage de prog.", type: "is a"},
-        {id: 2, source: 2, target: 0, label: "est un langage de prog.", type: "is a"},
-        {id: 3, source: 3, target: 0, label: "est un langage de prog.", type: "is a"},
-        {id: 4, source: 4, target: 0, label: "est un langage de prog.", type: "is a"},
+        {id: 1, source: 1, target: 0, label: "est un langage de prog.", type: "ako"},
+        {id: 2, source: 2, target: 0, label: "est un langage de prog.", type: "ako"},
+        {id: 3, source: 3, target: 0, label: "est un langage de prog.", type: "ako"},
+        {id: 4, source: 4, target: 0, label: "est un langage de prog.", type: "ako"},
 
         {id: 5, source: 5, target: 1, label: "est procédural", type: "instance of"},
         {id: 6, source: 6, target: 2, label: "est orienté objet", type: "instance of"},
@@ -146,7 +146,14 @@ function update() {
             'id': function (d, i) { return 'link-' + d.id },
             'marker-end': 'url(#fleche)'
         })
-        .style("stroke-dasharray", function (d) { return d.type == "instance of" ? ("3, 3") : ("1, 0"); })
+        .style("stroke-dasharray", function (d) {
+            switch (d.type) {
+                case "ako": return ("1, 0");
+                case "association": return ("1, 0");
+                case "instance of": return ("3, 3");
+                default: return ("1, 0");
+            }
+        })
         .on("click", function (d) { linkClick(d)});
 
     // Création des labels posés sur les arrêtes.
@@ -156,7 +163,7 @@ function update() {
         .append('text')
         .attr({
             'class': 'link-label',
-            'id': function (d, i) { return 'link-label-' + d.id },
+            'id': function (d) { return 'link-label-' + d.id },
             'dx': linkDistance / 2,
             'dy': -10,
             'font-size': 13,
@@ -166,7 +173,7 @@ function update() {
         .on("click", function (d) { linkClick(d)});
     linkLabels
         .append('textPath')
-        .attr('xlink:href', function (d, i) { return '#link-' + d.id })
+        .attr('xlink:href', function (d) { return '#link-' + d.id })
         .text(function (d) { return d.label; });
 
     // Création des cartes (noeuds).
@@ -183,10 +190,10 @@ function update() {
         .attr({
             "width": nodeWidth,
             "height": nodeHeight,
-            "rx": function (d) { return d.type == "concept" ? 10 : 0; },
-            "ry": function (d) { return d.type == "concept" ? 10 : 0; }
+            "rx": function (d) { return d.type === "concept" ? 10 : 0; },
+            "ry": function (d) { return d.type === "concept" ? 10 : 0; }
         })
-        .style("fill", function (d) { return d.type == "concept" ? "#FFC44E" : "#AF813C"; });
+        .style("fill", function (d) { return d.type === "concept" ? "#FFC44E" : "#AF813C"; });
     nodes
         .append("text")
         .attr({
@@ -284,7 +291,7 @@ function removeNode(node) {
 
     dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
     $.each(dataset.links, function (i, link) {
-        if(link.source.id == node.id || link.target.id == node.id)
+        if(link.source.id === node.id || link.target.id === node.id)
             linksToDelete.push(link);
     });
     $.each(linksToDelete, function (i, link) {
@@ -316,14 +323,39 @@ function addNode(node) {
  * Ajoute une relation entre les noeuds passés en paramètre et met ensuite à jour l'affichage.
  * @param fromNode d3_node_datum
  * @param toNode d3_node_datum
+ * @param label string
+ * @param type string
  */
-function addLink(fromNode, toNode) {
+function addLink(fromNode, toNode, label, type) {
     var iFrom = dataset.nodes.indexOf(fromNode);
     var iTo = dataset.nodes.indexOf(toNode);
     var newID = new Date().valueOf();
-    dataset.links.push({id: newID, source: iFrom, target: iTo});
+    dataset.links.push({id: newID, source: iFrom, target: iTo, label: label, type: type});
     update();
     return getLinkById(newID);
+}
+
+/**
+ * Détermine les contraintes de liaison entre un lien et 2 noeuds.
+ * Retourne true si la création est possible, false sinon.
+ * @param nodeSource
+ * @param nodeTarget
+ * @param linkType
+ * @returns {boolean}
+ */
+function canCreateLink(nodeSource, nodeTarget, linkType) {
+    var validation = true;
+    switch (linkType) {
+        case "instance of":
+            if(nodeSource.type !== "object") validation = false;
+            break;
+        case "ako":
+            if(nodeSource.type !== "concept" || nodeTarget.type !== "concept") validation = false;
+            break;
+        case "association": validation = true; break;
+        default: validation = true;
+    }
+    return validation;
 }
 
 /**
@@ -349,7 +381,7 @@ function editLinkLabel(link, newLabel) {
     // Mise à jour des données.
     linkData.label = newLabel;
     // Mise à jour de l'affichage du texte du lien actuel.
-    d3.selectAll("textPath").filter(function (d) { return linkData.id == d.id; }).text(linkData.label);
+    d3.selectAll("textPath").filter(function (d) { return linkData.id === d.id; }).text(linkData.label);
 }
 
 /**
@@ -361,7 +393,7 @@ function editLinkLabel(link, newLabel) {
 function findLink(sourceNode, targetNode) {
     var link = null;
     $.each(dataset.links, function (i, val) {
-        if(val.source.id == sourceNode.id && val.target.id == targetNode.id)
+        if(val.source.id === sourceNode.id && val.target.id === targetNode.id)
             link = val;
     });
     return link;
@@ -375,7 +407,7 @@ function findLink(sourceNode, targetNode) {
 function getNodeById(id) {
     var node = null;
     $.each(dataset.nodes, function (i, val) {
-        if(val.id == id)
+        if(val.id === id)
             node = val;
     });
     return node;
@@ -389,7 +421,7 @@ function getNodeById(id) {
 function getLinkById(id) {
     var link = null;
     $.each(dataset.links, function (i, val) {
-        if(val.id == id)
+        if(val.id === id)
             link = val;
     });
     return link;
@@ -475,12 +507,12 @@ $(window).resize(function() {
  * Permet de déselectionner un noeud ou un lien si tel était le cas.
  */
 $("#svg-container").click(function () {
-    if(selectedNode != null) {
+    if(selectedNode !== null) {
         nodeDefaultStyle(selectedNode);
         selectedNode = null;
         updateSelectedNodeMenu(selectedNode);
     }
-    if(selectedLink != null) {
+    if(selectedLink !== null) {
         linkDefaultStyle(selectedLink);
         selectedLink = null;
         updateSelectedLinkMenu(selectedLink);
@@ -496,8 +528,8 @@ function nodeDragStart(d) {
     d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
 
     // On met l'ancienne carte sélectionnée sans contour, la nouvelle est entourée en rouge.
-    if(selectedNode != null) nodeDefaultStyle(selectedNode);
-    if(selectedLink != null) linkDefaultStyle(selectedLink);
+    if(selectedNode !== null) nodeDefaultStyle(selectedNode);
+    if(selectedLink !== null) linkDefaultStyle(selectedLink);
 
     selectedLink = null;
     selectedNode = this;
@@ -532,11 +564,11 @@ function linkClick(link) {
     d3.event.stopPropagation();
 
     // Rétablissement des styles par défaut pour les anciennes sélections.
-    if(selectedLink != null) linkDefaultStyle(selectedLink);
-    if(selectedNode != null) nodeDefaultStyle(selectedNode);
+    if(selectedLink !== null) linkDefaultStyle(selectedLink);
+    if(selectedNode !== null) nodeDefaultStyle(selectedNode);
 
     selectedNode = null;
-    selectedLink = d3.selectAll(".link").filter(function (d) { return d.id == link.id; }).node();
+    selectedLink = d3.selectAll(".link").filter(function (d) { return d.id === link.id; }).node();
     linkSelectionStyle(selectedLink);
 
     // Mise à jour de l'affichage du menu.
@@ -553,24 +585,31 @@ function linkClick(link) {
  */
 function editLink(linkEditionStatus, node) {
     if(linkEditionStatus.enable) {
-        if(linkEditionStatus.source == null) linkEditionStatus.source = node;
-        else if(linkEditionStatus.target == null) {
+        if(linkEditionStatus.source === null) linkEditionStatus.source = node;
+        else if(linkEditionStatus.target === null) {
             linkEditionStatus.target = node;
-            var newLink = addLink(linkEditionStatus.source, linkEditionStatus.target);
 
+            // Création du nouveau lien si les contraintes le permettent.
+            if(canCreateLink(linkEditionStatus.source, linkEditionStatus.target, linkEditionStatus.type)) {
+                var newLink = addLink(linkEditionStatus.source, linkEditionStatus.target, linkEditionStatus.type, linkEditionStatus.type);
+                selectedLink = d3.selectAll(".link").filter(function (d) { return d.id === newLink.id; }).node();
+                linkSelectionStyle(selectedLink);
+                updateSelectedLinkMenu(selectedLink);
+                // Petite attente pour être sur que l'input n'est pas encore hidden.
+                setTimeout(function () { $("#menu-link-selected-label")[0].focus(); }, 500);
+                $("#menu-link-selected-label").val(newLink.type);
+            } else {
+                alert("Contrainte de liaison. Impossible de créer cette relation entre ces types de cartes.");
+            }
+            // Réinitialisation du linkEditionStatus.
             linkEditionStatus.enable = false;
             linkEditionStatus.source = null;
             linkEditionStatus.target = null;
 
+            // Modification de la sélection.
             nodeDefaultStyle(selectedNode);
             selectedNode = null;
             updateSelectedNodeMenu(selectedNode);
-
-            selectedLink = d3.selectAll(".link").filter(function (d) { return d.id == newLink.id; }).node();
-            linkSelectionStyle(selectedLink);
-            updateSelectedLinkMenu(selectedLink);
-            // Petite attente pour être sur que l'input n'est pas encore hidden.
-            setTimeout(function () { $("#menu-link-selected-label")[0].focus(); }, 500);
         }
     } else {
         linkEditionStatus.source = null;
@@ -590,7 +629,7 @@ function updateSelectedNodeMenu(node) {
     var nameInput = $("#menu-node-selected-name");
     var nodeMenu = $("#menu-node");
 
-    if(node == null) {
+    if(node === null) {
         nodeMenu.fadeOut();
     } else {
         var d3Node = d3.select(node).datum();
@@ -608,7 +647,7 @@ function updateSelectedLinkMenu (link) {
     var linkMenu = $("#menu-link");
     var linkSelectedType = $("#menu-link-link-type");
 
-    if(link == null) {
+    if(link === null) {
         linkMenu.fadeOut();
     } else {
         var d3Link = d3.select(link).datum();
@@ -649,15 +688,15 @@ $(".node-creator").click(function () {
     var newNode = addNode({
         "id": uniquID(),
         "name": "NEW !",
-        "type": function (id) { return id == "concept-creator" ? "concept" : "instance"; } ($(this).attr("id")),
+        "type": function (id) { return id === "concept-creator" ? "concept" : "object"; } ($(this).attr("id")),
         "x": 0,
         "y": 0
     });
 
-    if(selectedLink != null) linkDefaultStyle(selectedLink);
+    if(selectedLink !== null) linkDefaultStyle(selectedLink);
     selectedLink = null;
-    if(selectedNode != null) nodeDefaultStyle(selectedNode);
-    selectedNode = d3.selectAll(".node").filter(function (d) { return d.id == newNode.id; }).node();
+    if(selectedNode !== null) nodeDefaultStyle(selectedNode);
+    selectedNode = d3.selectAll(".node").filter(function (d) { return d.id === newNode.id; }).node();
     nodeSelectionStyle(selectedNode);
 
     updateSelectedNodeMenu(selectedNode);
@@ -676,6 +715,11 @@ $(".node-creator").click(function () {
  */
 $(".link-creator").click(function () {
     linkEditionStatus.enable = true;
+    switch ($(this).attr("id")) {
+        case "ako-creator": linkEditionStatus.type = "ako"; break;
+        case "instance-of-creator": linkEditionStatus.type = "instance of"; break;
+        case "association-creator": linkEditionStatus.type = "association"; break;
+    }
 });
 
 /**
@@ -685,27 +729,22 @@ $(".link-creator").click(function () {
 $("#menu-link-link-type").change(function () {
     var d3Link = d3.select(selectedLink); // D3 DOM object
     var linkData = d3Link.datum(); // D3 Datum object
-    var error = false;
 
-    // Application de contraintes sur les liaisons.
-    switch ($(this).val()) {
-        case "instance of":
-            if(linkData.source.type != "instance") error = true;
-            break;
-        case "is a":
-            if(linkData.source.type != "concept" || linkData.target.type != "concept") error = true;
-            break;
-        default: error = true;
-    }
-
-    if(error) {
+    if(!canCreateLink(linkData.source, linkData.target, $(this).val())) {
         alert("Contrainte de liaison.");
         $(this).val(linkData.type);
         return;
     }
 
     linkData.type = $(this).val();
-    d3Link.style("stroke-dasharray", function () { return linkData.type == "instance of" ? ("3, 3") : ("1, 0"); });
+    d3Link.style("stroke-dasharray", function () {
+        switch (linkData.type) {
+            case "ako": return ("1, 0");
+            case "association": return ("1, 0");
+            case "instance of": return ("3, 3");
+            default: return ("1, 0");
+        }
+    });
 });
 
 /**
@@ -733,14 +772,14 @@ $(window).keyup(function (e) {
         // Bouton DELETE
         case 46 :
             // Suppression noeud.
-            if(selectedNode != null) {
+            if(selectedNode !== null) {
                 removeNode(d3.select(selectedNode).datum());
                 selectedNode = null;
                 updateSelectedNodeMenu(selectedNode);
                 break;
             }
             // Suppresion lien.
-            if(selectedLink != null) {
+            if(selectedLink !== null) {
                 removeLink(d3.select(selectedLink).datum());
                 selectedLink = null;
                 updateSelectedLinkMenu(selectedLink);
@@ -750,12 +789,12 @@ $(window).keyup(function (e) {
         // Bouton ENTRER
         case 13 :
             // Mise à jour nom noeud.
-            if(selectedNode != null) {
+            if(selectedNode !== null) {
                 var nodeName = $("#menu-node-selected-name");
                 if(nodeName.is(":focus")) editNodeLabel(selectedNode, nodeName.val());
                 break;
             }
-            if(selectedLink != null) {
+            if(selectedLink !== null) {
                 var linkName = $("#menu-link-selected-label");
                 if(linkName.is(":focus")) editLinkLabel(selectedLink, linkName.val());
                 break;

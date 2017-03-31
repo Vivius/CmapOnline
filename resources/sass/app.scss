@@ -18,6 +18,10 @@ html {
         overflow: hidden;
         #menu-node {
           display: none;
+          textarea {
+            width: 100%;
+            min-height: 50px;
+          }
         }
         #menu-link {
           display: none;
@@ -45,6 +49,7 @@ html {
             display: inline-block;
             border: 0;
             width: 40%;
+            margin: 5px;
             height: 50px;
             background-color: #afd0ff;
             line-height: 50px;
