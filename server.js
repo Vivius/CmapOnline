@@ -1,4 +1,5 @@
 var express = require('express');
+var bodyParser = require('body-parser');
 var mongo = require("mongodb").MongoClient;
 var objectID = require("mongodb").ObjectID;
 var DB = "mongodb://localhost/cmap";
@@ -15,6 +16,8 @@ app.use("/css",express.static(__dirname + '/css'));
 app.use("/images",express.static(__dirname + '/images'));
 app.use("/js",express.static(__dirname + '/js'));
 app.use("/html",express.static(__dirname + '/html'));
+app.use(bodyParser.json()); // Support json encoded bodies.
+app.use(bodyParser.urlencoded({ extended: true })); // Support encoded bodies.
 
 //------------------------------------------------------------
 // ROUTES
@@ -26,12 +29,12 @@ app.get('/', function(req, res) {
 
 app.get("/getGraph/:id", function (req, res) {
     console.log(req.params["id"]);
-    res.json({ graph: { nodes: {}, links: {} } });
+    res.json({ nodes: {}, links: {} });
 });
 
-app.get("/node/create", function (req, res) {
+app.post("/node/create", function (req, res) {
     mongo.connect(DB, function(error, db) {
-        db.collection("nodes").insert({ name:"New", x:0, y:0, fixed:true}, null, function (error, results) {
+        db.collection("nodes").insert(req.body, null, function (error, results) {
             if (error) throw error;
             res.json(results.ops[0]);
         });

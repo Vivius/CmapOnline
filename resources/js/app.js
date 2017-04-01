@@ -69,6 +69,20 @@ var dataset = {
     ]
 };
 
+/**
+ * Demande au serveur d'ajouter un nouveau noeud en base de données.
+ * Le noeud est retourné avec son nouvel identidiant unique.
+ * @param node
+ * @returns {null, node}
+ */
+function createNodeRequest(node) {
+    $.post("node/create", node, function (data) {
+        console.log(data);
+        return data;
+    }, "json");
+    return null;
+}
+
 /******************************************************************
  * AFFICHAGE / CREATION DU GRAPHE                                 *
  ******************************************************************/
@@ -881,4 +895,6 @@ setTimeout(function () {
     console.log("Suppression du lien entre Java et C#");
     removeLink(findLink(getNodeById(3), getNodeById(4)));
 }, 7000);
+
+// createNodeRequest(dataset.nodes[0]);
 */
