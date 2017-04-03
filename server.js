@@ -6,7 +6,7 @@ var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
 mongo.connect(DB, function(error, db) {
-    if(error) throw error;
+    if(error) console.log("ERREUR - Impossible de se conencter à MongoDB");
     console.log("Connecté à la base de données 'cmap'");
 });
 
@@ -16,27 +16,68 @@ app.use("/css",express.static(__dirname + '/css'));
 app.use("/images",express.static(__dirname + '/images'));
 app.use("/js",express.static(__dirname + '/js'));
 app.use("/html",express.static(__dirname + '/html'));
-app.use(bodyParser.json()); // Support json encoded bodies.
-app.use(bodyParser.urlencoded({ extended: true })); // Support encoded bodies.
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+//------------------------------------------------------------
+// HELPERS
+//------------------------------------------------------------
+
+/**
+ * Permet de convertir un noeud venant de la base pour l'envoyer au client.
+ * Sert principalement à modifier le nom de l'attribut représentant l'identifiant.
+ * @param node
+ */
+function convertNodeforClient(node) {
+    if(node._id) {
+        node.id = node._id;
+        delete node._id;
+    }
+    return node;
+}
+
+/**
+ * Permet de transformer correctement un noeud avant de l'ajouter en base.
+ * Procède principalement à des transtypages.
+ */
+function convertNodeForDatabase(node) {
+    if(node.id) {
+        node._id = node.id;
+        delete node.id;
+    }
+    node.y = parseInt(node.y);
+    node.x = parseInt(node.x);
+    node.fixed = node.fixed === "true"; // Cast en booléen.
+    return node;
+}
 
 //------------------------------------------------------------
 // ROUTES
 //------------------------------------------------------------
+
+/**
+ * Affichage de la homepage.
+ */
 app.get('/', function(req, res) {
     res.setHeader('Content-Type', 'text/html');
     res.sendFile(__dirname + '/index.html');
 });
 
+/**
+ * Retourne un graphe entier grâce à son identifiant.
+ */
 app.get("/getGraph/:id", function (req, res) {
     console.log(req.params["id"]);
     res.json({ nodes: {}, links: {} });
 });
 
+/**
+ * Création d'un nouveau noeud (carte) en base.
+ */
 app.post("/node/create", function (req, res) {
     mongo.connect(DB, function(error, db) {
-        db.collection("nodes").insert(req.body, null, function (error, results) {
-            if (error) throw error;
-            res.json(results.ops[0]);
+        db.collection("nodes").insert(convertNodeForDatabase(req.body), null, function (error, results) {
+            res.json(convertNodeforClient(results.ops[0]));
         });
     });
 });
@@ -57,13 +98,15 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 io.on('connection', function(socket) {
-    socket.on("new-node", function (node) {
+    // Ajout d'un noeud pour tous les clients.
+    socket.on("node/add", function (node) {
         console.log("ADD NODE : " + node.id);
-        io.emit("new-node-response", node);
+        io.emit("node/added", convertNodeforClient(node));
     });
-    socket.on("remove-node", function (node) {
+    // Suppression d'un noeud pour tous les clients.
+    socket.on("node/remove", function (node) {
         console.log("REMOVE NODE : " + node.id);
-        io.emit("remove-node-response", node);
+        io.emit("node/removed", convertNodeforClient(node));
     });
 });
 
