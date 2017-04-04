@@ -710,6 +710,7 @@ $("#menu-node-validate").click(function () {
 $(".node-creator").click(function () {
     $.post("/node/create", {
         name: "New",
+        comment: "",
         type: function (id) { return id === "concept-creator" ? "concept" : "object"; } ($(this).attr("id")),
         x: 0,
         y: 0,
