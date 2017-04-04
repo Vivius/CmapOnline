@@ -42,3 +42,4 @@ jspm_packages
 # css and js are compiled from the resources folder
 /css/
 /js/
+/data/
