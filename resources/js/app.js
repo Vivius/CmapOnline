@@ -290,7 +290,7 @@ function linkDefaultStyle(link) {
 function removeNode(node) {
     var linksToDelete = [];
 
-    dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
+    dataset.nodes.splice(dataset.nodes.indexOf(getNodeById(node.id)), 1);
     $.each(dataset.links, function (i, link) {
         if(link.source.id === node.id || link.target.id === node.id)
             linksToDelete.push(link);
@@ -691,7 +691,7 @@ function updateSelectedLinkMenu (link) {
 $("#menu-node-delete").click(function () {
     var nodeData = d3.select(selectedNode).datum();
     removeNode(nodeData);
-    socket.emit("remove-node", nodeData); // SOCKET EMIT
+    socket.emit("node/remove", nodeData); // SOCKET EMIT
     selectedNode = null;
     updateSelectedNodeMenu(selectedNode);
 });
@@ -708,27 +708,30 @@ $("#menu-node-validate").click(function () {
  * Fonction exécutée quand l'utilisateur crée une nouvelle carte conceptuelle.
  */
 $(".node-creator").click(function () {
-    var newNode = addNode({
-        "id": uniquID(),
-        "name": "New",
-        "type": function (id) { return id === "concept-creator" ? "concept" : "object"; } ($(this).attr("id")),
-        "x": 0,
-        "y": 0
-    });
-
-    socket.emit("new-node", {id: newNode.id, name: newNode.name, type: newNode.type, x: newNode.x, y: newNode.y, fixed: false});
-
-    if(selectedLink !== null) linkDefaultStyle(selectedLink);
-    selectedLink = null;
-    if(selectedNode !== null) nodeDefaultStyle(selectedNode);
-    selectedNode = d3.selectAll(".node").filter(function (d) { return d.id === newNode.id; }).node();
-    nodeSelectionStyle(selectedNode);
-
-    updateSelectedNodeMenu(selectedNode);
-    updateSelectedLinkMenu(selectedLink);
-    // Préparation de l'input pour la première modification du nom de la carte.
-    $("#menu-node-selected-name").val("");
-    $("#menu-node-selected-name")[0].focus();
+    $.post("/node/create", {
+        name: "New",
+        type: function (id) { return id === "concept-creator" ? "concept" : "object"; } ($(this).attr("id")),
+        x: 0,
+        y: 0,
+        fixed: false
+    }, function (node) {
+        console.log(node);
+        // Modification de la propriété ID.
+        addNode(node); // Ajout du noeud au graphe.
+        socket.emit("node/add", node); // On indiqe au serveur que le noeud peut être envoyé aux autres clients.
+        // Modification des styles de sélection.
+        if(selectedLink !== null) linkDefaultStyle(selectedLink);
+        selectedLink = null;
+        if(selectedNode !== null) nodeDefaultStyle(selectedNode);
+        selectedNode = d3.selectAll(".node").filter(function (d) { return d.id === node.id; }).node();
+        nodeSelectionStyle(selectedNode);
+        // Mise à jour de l'affichage du menu de gauche.
+        updateSelectedNodeMenu(selectedNode);
+        updateSelectedLinkMenu(selectedLink);
+        // Préparation de l'input pour la première modification du nom de la carte.
+        $("#menu-node-selected-name").val("");
+        $("#menu-node-selected-name")[0].focus();
+    }, "json");
 });
 
 ///////////
@@ -800,7 +803,9 @@ $(window).keyup(function (e) {
         case 46 :
             // Suppression noeud.
             if(selectedNode !== null) {
-                removeNode(d3.select(selectedNode).datum());
+                var nodeData = d3.select(selectedNode).datum();
+                removeNode(nodeData);
+                socket.emit("node/remove", nodeData); // SOCKET EMIT
                 selectedNode = null;
                 updateSelectedNodeMenu(selectedNode);
                 break;
@@ -837,7 +842,7 @@ $(window).keyup(function (e) {
 /**
  * Réception des noeuds ajoutés.
  */
-socket.on("new-node-response", function (node) {
+socket.on("node/added", function (node) {
     if(getNodeById(node.id) === null)
         addNode(node);
 });
@@ -845,10 +850,12 @@ socket.on("new-node-response", function (node) {
 /**
  * Réception des noeuds à supprimer.
  */
-socket.on("remove-node-response", function (node) {
-    removeNode(node);
-    selectedNode = null;
-    updateSelectedNodeMenu(selectedNode);
+socket.on("node/removed", function (node) {
+    if(getNodeById(node.id) !== null) {
+        removeNode(node);
+        selectedNode = null;
+        updateSelectedNodeMenu(selectedNode);
+    }
 });
 
 /******************************************************************
@@ -879,4 +886,6 @@ setTimeout(function () {
     console.log("Suppression du lien entre Java et C#");
     removeLink(findLink(getNodeById(3), getNodeById(4)));
 }, 7000);
+
+// createNodeRequest(dataset.nodes[0]);
 */
