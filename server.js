@@ -73,10 +73,18 @@ app.get("/edit/:id", function (req, res) {
 
 /**
  * Retourne un graphe entier grâce à son identifiant.
+ * TODO : aller chercher en base le graphe demandé avec l'ensemble des ses liens et noeuds.
  */
-app.get("/getGraph/:id", function (req, res) {
+app.get("/graph/get/:id", function (req, res) {
     console.log(req.params["id"]);
     res.json({ nodes: {}, links: {} });
+});
+
+/**
+ * Permet de créer un nouveau graphe.
+ */
+app.get("/graph/create", function () {
+    // TODO : retourn un nouveau graphe après l'avoir ajouté en base.
 });
 
 /**
