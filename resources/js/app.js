@@ -290,7 +290,7 @@ function linkDefaultStyle(link) {
 function removeNode(node) {
     var linksToDelete = [];
 
-    dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
+    dataset.nodes.splice(dataset.nodes.indexOf(getNodeById(node.id)), 1);
     $.each(dataset.links, function (i, link) {
         if(link.source.id === node.id || link.target.id === node.id)
             linksToDelete.push(link);
@@ -708,13 +708,14 @@ $("#menu-node-validate").click(function () {
  * Fonction exécutée quand l'utilisateur crée une nouvelle carte conceptuelle.
  */
 $(".node-creator").click(function () {
-    $.post("node/create", {
+    $.post("/node/create", {
         name: "New",
         type: function (id) { return id === "concept-creator" ? "concept" : "object"; } ($(this).attr("id")),
         x: 0,
         y: 0,
         fixed: false
     }, function (node) {
+        console.log(node);
         // Modification de la propriété ID.
         addNode(node); // Ajout du noeud au graphe.
         socket.emit("node/add", node); // On indiqe au serveur que le noeud peut être envoyé aux autres clients.

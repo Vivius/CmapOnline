@@ -122,7 +122,7 @@ io.on('connection', function(socket) {
     // Suppression d'un noeud pour tous les clients.
     socket.on("node/remove", function (node) {
         console.log("REMOVE NODE : " + node.id);
-        io.emit("node/removed", convertNodeforClient(node));
+        io.emit("node/removed", node);
     });
 });
 
