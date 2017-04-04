@@ -60,7 +60,15 @@ function convertNodeForDatabase(node) {
  */
 app.get('/', function(req, res) {
     res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/html/home.html');
+});
+
+/**
+ * Affichage de la page d'édition du graphe spécifié.
+ */
+app.get("/edit/:id", function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/editor.html');
 });
 
 /**
