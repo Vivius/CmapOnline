@@ -1,0 +1,97 @@
+html {
+  height: 100%;
+  body {
+    height: 100%;
+    main {
+      height: 100%;
+      #menu {
+        width: 20%;
+        height: 100%;
+        float: right;
+        overflow: hidden;
+        #menu-node {
+          display: none;
+          textarea {
+            width: 100%;
+            min-height: 50px;
+          }
+        }
+        #menu-link {
+          display: none;
+          select {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 5px;
+          }
+        }
+        #menu-tools {
+          text-align: center;
+          .node-creator {
+            display: inline-block;
+            border: 0;
+            width: 40%;
+            height: 50px;
+            background-color: #aeff9e;
+            line-height: 50px;
+            font-weight: bold;
+            &:hover {
+              cursor: pointer;
+            }
+          }
+          .link-creator {
+            display: inline-block;
+            border: 0;
+            width: 40%;
+            margin: 5px;
+            height: 50px;
+            background-color: #afd0ff;
+            line-height: 50px;
+            font-weight: bold;
+            &:hover {
+              cursor: pointer;
+            }
+          }
+          .selected {
+            background-color: red;
+          }
+        }
+        h2 {
+          padding: 10px;
+          font-size: 18px;
+          font-weight: bold;
+        }
+        input
+        {
+          text-align: center;
+          padding: 5px;
+          margin-bottom: 5px;
+          display: block;
+          width: 100%;
+          border: 0;
+          &:hover {
+            cursor: pointer;
+          }
+        }
+      }
+      #svg-container {
+        overflow: hidden;
+        width: 80%;
+        height: 100%;
+        float: left;
+        .node {
+          &:hover {
+            cursor: grab;
+          }
+          &:active {
+            cursor: grabbing;
+          }
+        }
+        .link-label {
+          &:hover {
+            cursor: pointer;
+          }
+        }
+      }
+    }
+  }
+}

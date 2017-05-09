@@ -1,3 +1,6 @@
 /**
- * Created by Vincent on 09/05/2017.
+ * Module de gestion des contrôles utilisateur.
  */
+
+import Vue from "vue"
+import $ from "jquery"
