@@ -20,6 +20,7 @@
 
     <div class="table">
 
+
         <div class="row header blue">
             <div class="cell">
                 Graphs name
@@ -32,29 +33,18 @@
             </div>
         </div>
 
-        <div class="row">
+        <div class="row" v-for="item in items">
             <div class="cell">
-                Graphe des langages de programmation
+                {{ item.name }}
             </div>
             <div class="cell">
-                28 avril 2017
+                {{ item.date | convertDate}}
             </div>
             <div class="cell">
-                Vous
+                {{ item._id }}
             </div>
         </div>
 
-        <div class="row">
-            <div class="cell">
-                Graphe de la composition d'un moteur
-            </div>
-            <div class="cell">
-                2 mai 2017
-            </div>
-            <div class="cell">
-                Luc Damas
-            </div>
-        </div>
     </div>
 
 

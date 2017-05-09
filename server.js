@@ -54,10 +54,6 @@ function convertNodeForDatabase(node) {
     return node;
 }
 
-function convertGraphForDatabase(graph) {
-    //TODO
-    return graph;
-}
 
 //------------------------------------------------------------
 // ROUTES
@@ -89,12 +85,23 @@ app.get("/graph/get/:id", function (req, res) {
 });
 
 /**
+ * Retourne la liste de tous les graphes.
+ */
+app.get("/graph/getAll", function (req, res) {
+    mongo.connect(DB, function(error, db) {
+        db.collection("graphs").find().toArray(function(err, documents) {
+            res.json(documents);
+        });
+    })
+});
+
+/**
  * Permet de créer un nouveau graphe.
  */
 app.post("/graph/create", function (req,res) {
+    req.body["date"] =  Date.now();
     mongo.connect(DB, function(error, db) {
         db.collection("graphs").insert(req.body, null, function (error, results) {
-            console.log(req.body);
             res.json(results.ops[0]);
         });
     })
