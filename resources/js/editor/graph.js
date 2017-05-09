@@ -1,5 +1,5 @@
 /**
- * Module permettant la création de la mind map.
+ * Module gérant l'affichage du graphe.
  */
 
 import $ from 'jquery';
@@ -17,10 +17,11 @@ var svgContainer = "#svg-container";
 // Configuration
 var width = $(svgContainer).width(), height = $(svgContainer).height();
 var linkDistance = 300;
-var nodeWidth = 120, nodeHeight = 50;
+var nodeWidth = 160, nodeHeight = 50;
 var colors = d3.scale.category10();
 var nodes, links, linkLabels;
 var selectedNode = null, selectedLink = null;
+
 var linkEditionStatus = {
     type: null,
     source: null,
@@ -261,6 +262,15 @@ $(window).resize(function() {
 });
 
 /**
+ * Event appelé quand l'utilisateur click sur la fenêtre (en dehors des liens et des noeuds).
+ * Permet de déselectionner un noeud ou un lien si tel était le cas.
+ */
+$(svgContainer).click(function () {
+    unselectLink();
+    unselectNode();
+});
+
+/**
  * Event lancé lorsque les cartes bougent (drag, gravité, force...).
  */
 function forceTick() {
@@ -310,33 +320,76 @@ function forceTick() {
 
 /**
  * Lorque l'on commence à bouger une carte, on la fixe et on applique le style de sélection...
- * @param d
+ * @param node
  */
-function nodeDragStart(d) {
+function nodeDragStart(node) {
     d3.event.sourceEvent.stopPropagation();
-    d3.select(this).classed("fixed", d.fixed = true); // On fixe la carte.
+    d3.select(this).classed("fixed", node.fixed = true); // On fixe la carte.
+    unselectLink();
+    selectNode(node._id);
 }
 
 /**
  * Evénement appelé lorsque l'on arrête de déplacer une carte.
  */
-function nodeDragEnd() {
-
-}
+function nodeDragEnd() { }
 
 /**
  * Lorque l'on doule clic sur une carte, on la libère.
  * Le force layout reprend le contrôle par la suite.
- * @param d
+ * @param node
  */
-function nodeDbClick(d) {
+function nodeDbClick(node) {
     d3.event.stopPropagation(); // Stop l'event zoom lors du double clic.
-    d3.select(this).classed("fixed", d.fixed = false);
+    d3.select(this).classed("fixed", node.fixed = false);
+    unselectNode();
+}
+
+/**
+ * Evénement appelé lorque l'on clic sur un des liens du graphe.
+ * @param link
+ */
+function linkClick(link) {
+    d3.event.stopPropagation();
+    unselectNode();
+    selectLink(link._id);
 }
 
 /******************************************************************
  *** STYLES                                                     ***
  ******************************************************************/
+
+/**
+ * Style appliqué à un noeud quand il est sélectionné.
+ * @param id int
+ */
+function nodeSelectionStyle(id) {
+    getD3NodeById(id).select("rect").attr({"stroke": "red", "stroke-width": 2});
+}
+
+/**
+ * Fonction utilisée pour rétablir le style par défaut d'une carte.
+ * @param id int
+ */
+function nodeDefaultStyle(id) {
+    getD3NodeById(id).select("rect").attr("stroke", "none");
+}
+
+/**
+ * Permet d'appliquer un style de sélection à un lien.
+ * @param id int
+ */
+function linkSelectionStyle (id) {
+   getD3LinkById(id).attr({"fill": "#ff0004", "stroke": "#ff0004"});
+}
+
+/**
+ * Applique le style par défaut au lien donné.
+ * @param id int
+ */
+function linkDefaultStyle(id) {
+    getD3LinkById(id).attr({"fill": "#000", "stroke": "#000"});
+}
 
 /******************************************************************
  *** MANIPULATION                                               ***
@@ -369,6 +422,7 @@ function editNodeLabel(id, newLabel) {
  * @param id int
  */
 function removeNode(id) {
+    if(id === -1) return false;
     var linksToDelete = [];
     var node = getDataNodeById(id);
     dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
@@ -398,7 +452,7 @@ function getDataNodeById(id) {
 }
 
 /**
- * Retourne un noeud d3 datum grâce à son ID.
+ * Retourne un noeud d3js datum grâce à son ID.
  * @param id int
  * @returns d3_datum
  */
@@ -413,6 +467,23 @@ function getD3NodeById(id) {
  */
 function getDomNodeById(id) {
     return getD3NodeById(id).node();
+}
+
+/**
+ * Sélectionne le noeud passé en paramètre.
+ */
+function selectNode(id) {
+    unselectNode();
+    selectedNode = id;
+    nodeSelectionStyle(selectedNode);
+}
+
+/**
+ * Déselectionne le noeud actuellement sélectionné.
+ */
+function unselectNode() {
+    nodeDefaultStyle(selectedNode);
+    selectedNode = -1; 
 }
 
 // Links
@@ -450,6 +521,7 @@ function editLinkLabel(id, newLabel) {
  * @param id
  */
 function removeLink(id) {
+    if(id === -1) return false;
     var link = dataset.links.indexOf(getDataLinkById(id));
     dataset.links.splice(link, 1);
     update();
@@ -488,23 +560,53 @@ function getDomLinkById(id) {
     return getD3LinkById(id).node();
 }
 
+/**
+ * Sélectionne le lien passé en paramètre.
+ */
+function selectLink(id) {
+    unselectLink();
+    selectedLink = id;
+    linkSelectionStyle(selectedLink);
+}
+
+/**
+ * Déselectionne le noeud actuellement sélectionné.
+ */
+function unselectLink() {
+    linkDefaultStyle(selectedLink);
+    selectedLink = -1;
+}
+
 /******************************************************************
  *** EXPORTS                                                    ***
  ******************************************************************/
 
 export {
+    selectedNode,
+    selectedLink,
+
     addNode,
     editNodeLabel,
     removeNode,
     getDataNodeById,
     getD3NodeById,
     getDomNodeById,
+    selectNode,
+    unselectNode,
+
     addLink,
     editLinkLabel,
     removeLink,
     getD3LinkById,
     getDataLinkById,
-    getDomLinkById
+    getDomLinkById,
+    selectLink,
+    unselectLink,
+
+    nodeSelectionStyle,
+    nodeDefaultStyle,
+    linkSelectionStyle,
+    linkDefaultStyle
 }
 
 
