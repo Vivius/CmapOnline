@@ -6,7 +6,10 @@ var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
 mongo.connect(DB, function(error, db) {
-    if(error) console.log("ERREUR - Impossible de se conencter à MongoDB");
+    if(error) {
+        console.log("ERREUR - Impossible de se conencter à MongoDB");
+        throw error;
+    }
     console.log("Connecté à la base de données 'cmap'");
 });
 
