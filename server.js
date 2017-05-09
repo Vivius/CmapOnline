@@ -59,9 +59,18 @@ function convertNodeForDatabase(node) {
 //------------------------------------------------------------
 
 /**
+ * Affichage de la page login
+ */
+app.get('/', function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/login.html');
+});
+
+
+/**
  * Affichage de la homepage.
  */
-app.get('/', function(req, res) {
+app.get('/home', function(req, res) {
     res.setHeader('Content-Type', 'text/html');
     res.sendFile(__dirname + '/html/home.html');
 });
