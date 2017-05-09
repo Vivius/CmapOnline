@@ -110,13 +110,12 @@ body {
 
 .added {
   width: 320px;
-  height: 150px;
+  height: 100px;
   border: 2px solid #a5a5a5;
   padding: 20px;
+  visibility: hidden;
   background-color: #dfdfdf;
   border-radius: 3px;
-  display: none;
-  visibility: hidden;
   text-align: center;
   z-index: 999;
   position: fixed;
@@ -126,11 +125,12 @@ body {
 }
 #black_overlay {
   background-color: #333;
+  visibility: hidden;
+  height: 100%;
   left: 0;
   opacity: 0.8;
   position: absolute;
   top: 0;
-  visibility: hidden;
   z-index: 50;
 }
 

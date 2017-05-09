@@ -93,8 +93,9 @@ app.get("/graph/get/:id", function (req, res) {
  */
 app.post("/graph/create", function (req,res) {
     mongo.connect(DB, function(error, db) {
-        db.collection("graphs").insert(convertGraphForDatabase(req.body), null, function (error, results) {
-            res.json(convertGraphForDatabase(results.ops[0]));
+        db.collection("graphs").insert(req.body, null, function (error, results) {
+            console.log(req.body);
+            res.json(results.ops[0]);
         });
     })
 });

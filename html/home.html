@@ -1,21 +1,20 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-bind="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <title>Accueil</title>
     <link rel="stylesheet" type="text/css" href="/css/animate.css"/>
     <link rel="stylesheet" type="text/css" href="/css/app.css"/>
     <link rel="stylesheet" type="text/css" href="/css/homepage.css"/>
-    <script src="/js/app.js"></script>
+
 </head>
-<body>
-
-
+<body >
+    <div id="app">
 
     <div class="menu">
         <div id="logo"><img src="images/network.png" alt="Network logo"></div>
         <div id="title">CmapOnline</div>
-        <button class="menuButton" id="new">New graph</button>
+        <button class="menuButton" id="new"  v-on:click="seen = true">New graph</button>
         <button class="menuButton" id="logout">Log out</button>
     </div>
 
@@ -56,16 +55,20 @@
                 Luc Damas
             </div>
         </div>
-
     </div>
 
-    <div id="black_overlay" style="width: 100%;"> </div>
-    <div class="added" style="display: block;">
-        <img src="images/m_close-icon.png" width="20" height="20" class="close">
-        <h3>New graph</h3>
-        <input type="text" id="name" name="name" placeholder="Graph name">
-        <input type="button" value="Create" id="submit">
+
+        <div v-if="seen" v-bind:style="styleObject" id="black_overlay" style="width: 100%;"> </div>
+        <div v-if="seen" v-bind:style="styleObject" class="added" style="display: block;">
+            <img src="images/m_close-icon.png" width="20" height="20" class="close" v-on:click="seen = false">
+            <h3>New graph</h3>
+            <input type="text" v-model="name" placeholder="Graph name">
+            <button v-on:click="insertGraph">Create</button>
+        </div>
     </div>
+
+    <script src="/js/home/data.js"></script>
+
 
 </body>
 </html>
