@@ -12,29 +12,38 @@
         <div class="header">
             <h2>Log in to CmapOnline</h2>
         </div>
-        <div class="forms">
-            <form method="post">
+        <div id="login" class="forms">
+            <form v-on:submit.prevent="postConnection">
                <div class="form-elem">
                    <div>
                        <label id="pseudo">Pseudo</label>
-                       <input type="text" name="pseudo" for="pseudo">
+                       <input v-model="pseudo" type="text" name="pseudo" for="pseudo">
                    </div>
                    <div>
                        <label id="password">Password</label>
-                       <input type="password" name="password" for="password">
+                       <input v-model="password" type="password" name="password" for="password">
+                   </div>
+                   <div class="confirm-password">
+                       <template v-if="show">
+                           <label id="confirm-password">Confirm password</label>
+                           <input type="password" name="confirm-password" for="confirm-password">
+                       </template>
                    </div>
                </div>
 
                 <div class="form-login">
                     <div class="login">
-                        <button type="submit">Login</button>
+                        <button type="submit">{{ button }}</button>
                     </div>
-                    <div class="signup">
-                        <p>Or sign up</p>
+                    <div class="sign">
+                        <p @click="change">{{ text }}</p>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+    <footer>
+        <script type="text/javascript" src="/js/login.js"></script>
+    </footer>
 </body>
 </html>

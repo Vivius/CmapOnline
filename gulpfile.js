@@ -13,4 +13,5 @@ elixir(function(mix) {
     // Controllers
     mix.webpack("./resources/js/app.js", "./js/app.js");
     mix.webpack("./resources/js/editor/editor.js", "./js/editor.js");
+    mix.webpack("./resources/js/login/login.js", "./js/login.js");
 });

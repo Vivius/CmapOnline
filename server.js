@@ -66,6 +66,14 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + '/html/login.html');
 });
 
+/**
+ * Recherche un utilisateur en base
+ */
+app.post('/connect', function (req) {
+    mongo.connect(DB, function(error, db) {
+        db.collection("users").find(req.user);
+    });
+});
 
 /**
  * Affichage de la homepage.
@@ -138,4 +146,4 @@ io.on('connection', function(socket) {
     });
 });
 
-http.listen(8080);
+http.listen(8181);

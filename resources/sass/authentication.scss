@@ -28,7 +28,7 @@ label {
 }
 
 .form-elem div {
-  padding: 20px 20px;
+  padding: 5px 20px;
   font-size: 20px;
 }
 
@@ -40,6 +40,8 @@ label {
 .form-login {
   padding: 10px 20px;
   display: inline-block;
+  position: absolute;
+  bottom: 0px;
 }
 
 .form-login button {
@@ -56,8 +58,14 @@ label {
   float: left;
 }
 
-.signup {
+.sign {
   float: right;
   height: 35px;
   line-height: 35px;
+}
+
+.sign p {
+  user-select: none;
+  text-decoration: underline;
+  cursor: pointer;
 }
