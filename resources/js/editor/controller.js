@@ -13,14 +13,19 @@ var svgContainer = $("#svg-container");
 var nodes = $(".node");
 var links = $(".link-label");
 
+var nodeCreatorButton = $(".node-creator");
 var nodeMenu = $("#menu-node");
 var nodeNameInput = $("#menu-node-selected-name");
 var nodeCommentTextArea = $("#menu-node-selected-comment");
 var deleteNodeButton = $("#menu-node-delete");
+var validateNodeButton = $("#menu-node-validate");
+
+var linkCreatorButton = $(".link-creator");
 var linkMenu = $("#menu-link");
 var linkLabelInput = $("#menu-link-selected-label");
 var linkTypeSelection = $("#menu-link-link-type");
 var deleteLinkButton = $("#menu-link-delete");
+var validateLinkButton = $("#menu-link-validate");
 
 var linkEditionStatus = {
     type: null,
@@ -80,14 +85,21 @@ function updateMenu() {
  * Fonction appelée quand on crée un nouveau noeud.
  */
 function createNode() {
-
+    var uniqId =  new Date().valueOf();
+    Graph.addNode({_id: uniqId, name: "NEW", type: function (id) {
+        return id === "concept-creator" ? "concept" : "object";
+    }($(this).attr("id"))});
+    Graph.selectNode(uniqId);
+    updateMenu();
+    // TODO : ajout en BDD et socket emit.
 }
 
 /**
  * Fonction appelée quand on valide les changements apportés à un noeud.
  */
 function editNode() {
-    console.log("Renommage d'un noeud");
+    Graph.editNodeLabel(Graph.selectedNode, nodeNameInput.val());
+    Graph.getDataNodeById(Graph.selectedNode).comment = nodeCommentTextArea.val();
 }
 
 /**
@@ -112,6 +124,7 @@ function createLink() {
  * Fonction appelée quand on valide les changements apportés à un lien.
  */
 function editLink() {
+    Graph.editLinkLabel(Graph.selectedLink, linkLabelInput.val());
     console.log("Renommage d'un lien");
 }
 
@@ -119,7 +132,22 @@ function editLink() {
  * Fonction appelée quand on modifie le type d'un lien.
  */
 function changeLinkType() {
+    var link = Graph.getDataLinkById(Graph.selectedLink);
+    if(!canCreateLink(link.source, link.target, $(this).val())) {
+        alert("Contrainte de liaison.");
+        $(this).val(link.type);
+        return;
+    }
 
+    link.type = $(this).val();
+    Graph.getD3LinkById(Graph.selectedLink).style("stroke-dasharray", function () {
+        switch (link.type) {
+            case "ako": return ("1, 0");
+            case "association": return ("1, 0");
+            case "instance of": return ("3, 3");
+            default: return ("1, 0");
+        }
+    });
 }
 
 /**
@@ -142,33 +170,30 @@ nodes.click(updateMenu);
 links.click(updateMenu);
 svgContainer.click(updateMenu);
 
+// Menu création
+nodeCreatorButton.click(createNode);
+
 // Menu noeud
 deleteNodeButton.click(removeNode);
+validateNodeButton.click(editNode);
 
 // Menu lien
+linkTypeSelection.change(changeLinkType);
 deleteLinkButton.click(removeLink);
+validateLinkButton.click(editLink);
 
 // Raccourcis clavier
 $(window).keyup(function (e) {
     switch (e.keyCode) {
         // Bouton DELETE
         case 46 :
-            // Suppression noeud.
             if(nodeMenu.is(":visible")) removeNode();
-            // Suppresion lien.
             if(linkMenu.is(":visible")) removeLink();
             break;
         // Bouton ENTRER
         case 13 :
-            // Mise à jour nom noeud.
-            if(Graph.selectedNode !== -1) {
-                // Update name
-                break;
-            }
-            if(Graph.selectedLink !== -1) {
-                // Mise à jour label lien.
-                break;
-            }
+            if(nodeMenu.is(":visible")) editNode();
+            if(linkMenu.is(":visible")) editLink();
             break;
     }
 });
@@ -180,14 +205,12 @@ $(window).keyup(function (e) {
 /**
  * Détermine les contraintes de liaison entre un lien et 2 noeuds.
  * Retourne true si la création est possible, false sinon.
- * @param nodeSourceID int
- * @param nodeTargetID int
+ * @param nodeSource object
+ * @param nodeTarget object
  * @param linkType string
  * @returns boolean
  */
-function canCreateLink(nodeSourceID, nodeTargetID, linkType) {
-    var nodeSource = Graph.getDataNodeById(nodeSourceID);
-    var nodeTarget = Graph.getDataNodeById(nodeTargetID);
+function canCreateLink(nodeSource, nodeTarget, linkType) {
     var validation = true;
     switch (linkType) {
         case "instance of":
@@ -205,12 +228,4 @@ function canCreateLink(nodeSourceID, nodeTargetID, linkType) {
         default: validation = false;
     }
     return validation;
-}
-
-/******************************************************************
- *** EXPORTS                                                    ***
- ******************************************************************/
-
-export {
-
 }
