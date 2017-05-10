@@ -244,13 +244,7 @@ function update() {
  * Permet de recalculer la taille du svg et du force layout.
  */
 $(window).resize(function() {
-    width = $(svgContainer).width();
-    height = $(svgContainer).height();
-    svg.attr({
-        "width": width,
-        "height": height,
-    });
-    force.size([width, height]);
+    force.size([$(svgContainer).width(), $(svgContainer).height()]);
     force.start();
 });
 
@@ -337,6 +331,7 @@ function nodeDragEnd() {
 function nodeDbClick(node) {
     d3.event.stopPropagation(); // Stop l'event zoom lors du double clic.
     d3.select(this).classed("fixed", node.fixed = false);
+    Networker.updateNode(getDataNodeById(selectedNode));
     unselectNode();
 }
 
@@ -408,8 +403,10 @@ function addNode(node) {
  * @param newLabel String
  */
 function editNodeLabel(id, newLabel) {
-    getDataNodeById(id).name = newLabel;
-    d3.select(getDomNodeById(id)).select("text").text("< " + newLabel + " >");
+    var node = getDataNodeById(id);
+    var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
+    node.name = newLabel;
+    d3.select(getDomNodeById(id)).select("text").text(formattedLabel);
 }
 
 /**
