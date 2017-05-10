@@ -10,6 +10,6 @@ elixir(function(mix) {
     mix.sass("./resources/sass/homepage.scss", "./css/homepage.css");
 
     // Controllers
-    mix.webpack("./resources/js/home/data.js", "./js/home/data.js");
+    mix.webpack("./resources/js/home.js", "./js/home.js");
     mix.webpack("./resources/js/editor/editor.js", "./js/editor.js");
 });

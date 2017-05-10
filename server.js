@@ -108,6 +108,18 @@ app.post("/graph/create", function (req,res) {
 });
 
 /**
+ * Supprimer un graphe grâce à son id
+ */
+app.post("/graph/deleteOne", function (req,res) {
+    mongo.connect(DB, function (error, db) {
+        db.collection('graphs', {}, function (err, graphs) {
+            graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
+            });
+        });
+    });
+});
+
+/**
  * Création d'un nouveau noeud (carte) en base.
  */
 app.post("/node/create", function (req, res) {

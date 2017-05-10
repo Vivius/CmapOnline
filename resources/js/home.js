@@ -5,11 +5,13 @@ import  Vue from 'vue/dist/vue';
 import VueResource from 'vue-resource';
 Vue.use(VueResource);
 
+
 var app = new Vue({
     el: '#app',
     data: {
         name: '',
         seen: false,
+        confirm: false,
         styleObject: {
             'visibility': 'visible',
         },
@@ -29,6 +31,13 @@ var app = new Vue({
                 this.items = response.body;
             }, response => {
             });
+        },
+        deleteGraph: function (event) {
+            console.log(event);
+            this.$http.post('/graph/deleteOne',{_id: event}).then(response => {
+            }, response => {
+            });
+            app.getAllGraphs();
         }
     },
     filters: {
