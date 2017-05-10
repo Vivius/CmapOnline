@@ -107,14 +107,15 @@ function createNode() {
 function editNode() {
     Graph.editNodeLabel(Graph.selectedNode, nodeNameInput.val());
     Graph.getDataNodeById(Graph.selectedNode).comment = nodeCommentTextArea.val();
+    Networker.updateNode(Graph.getDataNodeById(Graph.selectedNode));
 }
 
 /**
  * Fonction appelée quand on supprime un noeud.
  */
 function removeNode() {
+    Networker.removeNode(Graph.getDataNodeById(Graph.selectedNode));
     Graph.removeNode(Graph.selectedNode);
-    // TODO : supprimer en BDD.
     Graph.unselectNode();
     updateMenu();
 }
@@ -125,6 +126,7 @@ function removeNode() {
  * Fonction appelée quand on crée un nouveau lien.
  */
 function createLink() {
+    resetLinkEdition();
     linkEditionStatus.enable = true;
     linkEditionStatus.button = $(this);
     switch ($(this).attr("id")) {
@@ -154,17 +156,24 @@ function createLinkManager(linkEditionStatus, node) {
             var source = Graph.getDataNodeById(linkEditionStatus.source);
             var target = Graph.getDataNodeById(linkEditionStatus.target);
             if(canCreateLink(source, target, linkEditionStatus.type)) {
-                var newLink = Graph.addLink(
-                    linkEditionStatus.source,
-                    linkEditionStatus.target,
-                    new Date().valueOf(),
-                    linkEditionStatus.type,
-                    linkEditionStatus.type
-                );
-                Graph.selectLink(newLink._id);
-                Graph.unselectNode();
-                addLinkEventListeners(newLink._id);
-                updateMenu();
+                Networker.addLink({
+                    source: linkEditionStatus.source,
+                    target: linkEditionStatus.target,
+                    label: linkEditionStatus.type,
+                    type: linkEditionStatus.type,
+                }, function (link) {
+                    Graph.addLink(
+                        link.source,
+                        link.target,
+                        link._id,
+                        link.label,
+                        link.type
+                    );
+                    Graph.selectLink(link._id);
+                    Graph.unselectNode();
+                    addLinkEventListeners(link._id);
+                    updateMenu();
+                });
             } else {
                 alert("Contrainte de liaison. Impossible de créer cette relation entre ces types de cartes.");
             }
@@ -219,8 +228,8 @@ function changeLinkType() {
  * Fonction appelée quand on veut supprimer un lien.
  */
 function removeLink() {
+    Networker.removeLink(Graph.getDataLinkById(Graph.selectedLink));
     Graph.removeLink(Graph.selectedLink);
-    // TODO : supprimer en BDD.
     Graph.unselectLink();
     updateMenu();
 }
@@ -266,7 +275,6 @@ function addNodeEventListeners(id) {
  */
 function addLinkEventListeners(id) {
     var link = $("#link-label-" + id);
-    console.log(link);
     link.click(updateMenu);
 }
 

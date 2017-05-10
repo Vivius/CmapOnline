@@ -131,12 +131,49 @@ io.on('connection', function(socket) {
             db.collection("nodes").insert(node, function (error, results) {
                 fn(results.ops[0]);
                 io.emit("node/added", results.ops[0]);
-                console.log("NODE ADDED");
+                console.log("NODE " + results.ops[0]._id + " ADDED");
+            });
+        });
+    });
+    // Met à jour un noeud
+    socket.on("node/update", function (node, fn) {
+        mongo.connect(DB, function (error, db) {
+            db.collection('nodes').update({_id: new objectID(node._id)},
+                {$set: {name: node.name, type: node.type, comment: node.comment, x: node.x, y: node.y, fixed: node.fixed}},
+                function (error, results) {
+                    io.emit("node/updated", node);
+                    console.log("NODE " + node._id + " UPDATED");
             });
         });
     });
     // Suppression d'un noeud
-
+    socket.on("node/remove", function (node, fn) {
+        mongo.connect(DB, function (error, db) {
+            db.collection('nodes').remove(node, function (error, results) {
+                io.emit("node/removed", node);
+                console.log("NODE " + node._id + " REMOVED");
+            });
+        });
+    });
+    // Ajout d'un lien.
+    socket.on("link/add", function (link, fn) {
+        mongo.connect(DB, function(error, db) {
+            db.collection("links").insert(link, function (error, results) {
+                fn(results.ops[0]);
+                io.emit("link/added", results.ops[0]);
+                console.log("LINK " + results.ops[0]._id + " ADDED");
+            });
+        });
+    });
+    // Suppression d'un lien
+    socket.on("link/remove", function (link, fn) {
+        mongo.connect(DB, function (error, db) {
+            db.collection('links').remove(link, function (error, results) {
+                io.emit("link/removed", link);
+                console.log("LINK " + link._id + " REMOVED");
+            });
+        });
+    });
 });
 
 http.listen(8080);
