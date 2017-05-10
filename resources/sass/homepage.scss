@@ -2,6 +2,7 @@
   background-color: #3b3b3b;
   width: 100%;
   display: inline-block;
+  cursor:default;
 }
 
 .menuButton{
@@ -55,6 +56,7 @@ body {
   width: 100%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   display: table;
+  table-layout: fixed;
 }
 @media screen and (max-width: 580px) {
   .table {
@@ -90,6 +92,7 @@ body {
 .cell {
   padding: 6px 12px;
   display: table-cell;
+  vertical-align: middle;
 }
 @media screen and (max-width: 580px) {
   .cell {
@@ -100,7 +103,7 @@ body {
 
 .row:hover {
   background: #afd0ff;
-  cursor:pointer;
+  cursor:default;
 }
 
 .row.header:hover {
@@ -139,7 +142,6 @@ body {
   position: absolute;
   right: -8px;
   top: -10px;
-  cursor: pointer;
 }
 input {
   width: 92%;
@@ -159,10 +161,18 @@ input {
 
 .confirm{
   display: inline-block;
+  vertical-align: top;
 }
 
 
 button{
   padding: 5px;
+  cursor: pointer;
+}
 
+*{
+  user-select: none;
+}
+img{
+  cursor: pointer;
 }
