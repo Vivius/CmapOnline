@@ -11,7 +11,7 @@ var app = new Vue({
     data: {
         name: '',
         seen: false,
-        confirm: false,
+        confirm: -1,
         styleObject: {
             'visibility': 'visible',
         },
