@@ -13,30 +13,55 @@
             <h2>Log in to CmapOnline</h2>
         </div>
         <div id="login" class="forms">
-            <form v-on:submit.prevent="postConnection">
+            <form v-if="show" v-on:submit.prevent="postConnection">
                <div class="form-elem">
                    <div>
-                       <label id="pseudo">Pseudo</label>
-                       <input v-model="pseudo" type="text" name="pseudo" for="pseudo">
+                       <label>Pseudo</label>
+                       <input v-model="pseudo" type="text" name="pseudo">
                    </div>
                    <div>
-                       <label id="password">Password</label>
-                       <input v-model="password" type="password" name="password" for="password">
+                       <label>Password</label>
+                       <input v-model="password" type="password" name="password">
                    </div>
-                   <div class="confirm-password">
-                       <div v-if="show">
-                           <label id="confirm-password">Confirm password</label>
-                           <input type="password" name="confirm-password" for="confirm-password">
-                       </div>
+                   <div v-if="wrongLogin">
+                       <p class="warning">Wrong Pseudo / Password</p>
                    </div>
                </div>
 
                 <div class="form-login">
                     <div class="login">
-                        <button type="submit">{{ button }}</button>
+                        <button type="submit">Login</button>
                     </div>
                     <div class="sign">
-                        <p @click="changes">{{ text }}</p>
+                        <p @click="changes">Or sign up</p>
+                    </div>
+                </div>
+            </form>
+            <form v-else v-on:submit.prevent="createAccount">
+                <div class="form-elem">
+                    <div>
+                        <label>Pseudo</label>
+                        <input v-model="pseudo" type="text" name="pseudo">
+                    </div>
+                    <div>
+                        <label>Password</label>
+                        <input v-model="password" type="password" name="password">
+                    </div>
+                    <div v-if="wrongLogin">
+                        <p class="warning">Wrong Pseudo / Password</p>
+                    </div>
+                    <div class="confirm-password">
+                        <label>Confirm password</label>
+                        <input v-model="confirmPassword" type="password" name="confirm-password">
+                    </div>
+                </div>
+
+                <div class="form-login">
+                    <div class="login">
+                        <button type="submit">Sign up</button>
+                    </div>
+                    <div class="sign">
+                        <p @click="changes">Or login</p>
                     </div>
                 </div>
             </form>

@@ -2,7 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongo = require("mongodb").MongoClient;
 var objectID = require("mongodb").ObjectID;
-var DB = "mongodb://localhost/cmap";
+var DB = "mongodb://localhost/test";
 
 // Test de onnection à MongoDB.
 mongo.connect(DB, function(error, db) {
@@ -21,6 +21,7 @@ app.use("/js",express.static(__dirname + '/js'));
 app.use("/html",express.static(__dirname + '/html'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 
 //------------------------------------------------------------
 // HELPERS
@@ -69,10 +70,15 @@ app.get('/', function (req, res) {
 /**
  * Recherche un utilisateur en base
  */
-app.post('/connect', function (req, res) {
-    mongo.connect(DB, function(error, db) {
-        res.json(db.collection("users").find(req) != null);
-        console.log(req);
+
+app.post("/login", function (req,res) {
+    mongo.connect(DB, function (error, db) {
+        db.collection("users").find(req.body).toArray(function(err, documents) {
+            if(documents[0] != null) {
+
+            }
+            res.json(documents);
+        });
     });
 });
 
