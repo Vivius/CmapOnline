@@ -32,9 +32,27 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //------------------------------------------------------------
 
 /**
+ * Affichage de la page login
+ */
+app.get('/', function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/login.html');
+});
+
+/**
+ * Recherche un utilisateur en base
+ */
+app.post('/connect', function (req, res) {
+    mongo.connect(DB, function(error, db) {
+        res.json(db.collection("users").find(req) != null);
+        console.log(req);
+    });
+});
+
+/**
  * Affichage de la homepage.
  */
-app.get('/', function(req, res) {
+app.get('/home', function(req, res) {
     res.setHeader('Content-Type', 'text/html');
     res.sendFile(__dirname + '/html/home.html');
 });
@@ -121,4 +139,4 @@ io.on('connection', function(socket) {
 
 });
 
-http.listen(8080);
+http.listen(8181);

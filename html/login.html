@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="/css/animate.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/app.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/authentication.css"/>
+</head>
+<body>
+    <div class="login-panel">
+        <div class="header">
+            <h2>Log in to CmapOnline</h2>
+        </div>
+        <div id="login" class="forms">
+            <form v-on:submit.prevent="postConnection">
+               <div class="form-elem">
+                   <div>
+                       <label id="pseudo">Pseudo</label>
+                       <input v-model="pseudo" type="text" name="pseudo" for="pseudo">
+                   </div>
+                   <div>
+                       <label id="password">Password</label>
+                       <input v-model="password" type="password" name="password" for="password">
+                   </div>
+                   <div class="confirm-password">
+                       <div v-if="show">
+                           <label id="confirm-password">Confirm password</label>
+                           <input type="password" name="confirm-password" for="confirm-password">
+                       </div>
+                   </div>
+               </div>
+
+                <div class="form-login">
+                    <div class="login">
+                        <button type="submit">{{ button }}</button>
+                    </div>
+                    <div class="sign">
+                        <p @click="changes">{{ text }}</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <footer>
+        <script type="text/javascript" src="/js/login.js"></script>
+    </footer>
+</body>
+</html>
