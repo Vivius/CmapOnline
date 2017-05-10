@@ -2,6 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongo = require("mongodb").MongoClient;
 var objectID = require("mongodb").ObjectID;
+var session = require('express-session');
 var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
@@ -116,6 +117,8 @@ io.on('connection', function(socket) {
             });
         });
     });
+    // Suppression d'un noeud
+
 });
 
 http.listen(8080);

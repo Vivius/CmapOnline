@@ -176,17 +176,17 @@ function update() {
         .append("g")
         .attr("class", "node")
         .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
-        .on("click", function() { d3.event.stopPropagation(); }) // Stop la propagation de l'event click.
+        .on("click", function() { d3.event.stopPropagation(); }) // Stop la propagation de l'event click au parent.
         .call(force.drag);
     nodes
         .append("rect")
         .attr({
             "width": nodeWidth,
             "height": nodeHeight,
-            "rx": function (d) { return d.type === "concept" ? 10 : 0; },
-            "ry": function (d) { return d.type === "concept" ? 10 : 0; }
+            "rx": function (d) { return d.type == "concept" ? 10 : 0; },
+            "ry": function (d) { return d.type == "concept" ? 10 : 0; }
         })
-        .style("fill", function (d) { return d.type === "concept" ? "#FFC44E" : "#AF813C"; });
+        .style("fill", function (d) { return d.type == "concept" ? "#FFC44E" : "#AF813C"; });
     nodes
         .append("text")
         .attr({
@@ -196,7 +196,7 @@ function update() {
             "stroke": "#000000",
             "text-anchor": "middle"
         })
-        .text(function (d) { return d.type === "concept" ? "< " + d.name + " >" : d.name; });
+        .text(function (d) { return d.type == "concept" ? "< " + d.name + " >" : d.name; });
 
     // Mise à jour des références avec les nouveaux noeuds ajoutés.
     nodes = svg.selectAll('.node');
@@ -414,12 +414,12 @@ function editNodeLabel(id, newLabel) {
  * @param id int
  */
 function removeNode(id) {
-    if(id === -1) return false;
+    if(id == -1) return false;
     var linksToDelete = [];
     var node = getDataNodeById(id);
     dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
     $.each(dataset.links, function (i, link) {
-        if(link.source._id === node._id || link.target._id === node._id)
+        if(link.source._id == node._id || link.target._id == node._id)
             linksToDelete.push(link);
     });
     $.each(linksToDelete, function (i, link) {
@@ -437,7 +437,7 @@ function removeNode(id) {
 function getDataNodeById(id) {
     var node = null;
     $.each(dataset.nodes, function (i, val) {
-        if(val._id === id)
+        if(val._id == id)
             node = val;
     });
     return node;
@@ -505,7 +505,7 @@ function addLink(fromNodeID, toNodeID, newID, label, type) {
 function editLinkLabel(id, newLabel) {
     var linkData = getDataLinkById(id);
     linkData.label = newLabel;
-    d3.selectAll("textPath").filter(function (d) { return linkData._id === d._id; }).text(linkData.label);
+    d3.selectAll("textPath").filter(function (d) { return linkData._id == d._id; }).text(linkData.label);
 }
 
 /**
@@ -513,7 +513,7 @@ function editLinkLabel(id, newLabel) {
  * @param id
  */
 function removeLink(id) {
-    if(id === -1) return false;
+    if(id == -1) return false;
     var link = dataset.links.indexOf(getDataLinkById(id));
     dataset.links.splice(link, 1);
     update();
@@ -528,7 +528,7 @@ function removeLink(id) {
 function getDataLinkById(id) {
     var link = null;
     $.each(dataset.links, function (i, val) {
-        if(val._id === id)
+        if(val._id == id)
             link = val;
     });
     return link;

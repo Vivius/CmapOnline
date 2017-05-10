@@ -48,7 +48,7 @@ var linkEditionStatus = {
  */
 function updateNodePanel(id) {
     var node = Graph.getDataNodeById(id);
-    if(node === null) {
+    if(node == null) {
         nodeMenu.fadeOut();
     } else {
         nodeNameInput.val(node.name);
@@ -65,7 +65,7 @@ function updateNodePanel(id) {
  */
 function updateLinkPanel(id) {
     var link = Graph.getDataLinkById(id);
-    if(link === null) {
+    if(link == null) {
         linkMenu.fadeOut();
     } else {
         linkLabelInput.val(link.label);
@@ -91,10 +91,12 @@ function updateMenu() {
  */
 function createNode() {
     Networker.addNode({name: "NEW", type: function (id) {
-        return id === "concept-creator" ? "concept" : "object";
+        return id == "concept-creator" ? "concept" : "object";
     }($(this).attr("id"))}, function (node) {
         Graph.addNode(node);
         Graph.selectNode(node._id);
+        Graph.unselectLink();
+        addNodeEventListeners(node._id);
         updateMenu();
     });
 }
@@ -115,7 +117,6 @@ function removeNode() {
     // TODO : supprimer en BDD.
     Graph.unselectNode();
     updateMenu();
-    console.log("Suppression d'un noeud");
 }
 
 // Links
@@ -146,10 +147,9 @@ function createLink() {
  * @param node int
  */
 function createLinkManager(linkEditionStatus, node) {
-    console.log("Create link manager !");
     if(linkEditionStatus.enable) {
-        if(linkEditionStatus.source === -1) linkEditionStatus.source = node;
-        else if(linkEditionStatus.target === -1) {
+        if(linkEditionStatus.source == -1) linkEditionStatus.source = node;
+        else if(linkEditionStatus.target == -1) {
             linkEditionStatus.target = node;
             var source = Graph.getDataNodeById(linkEditionStatus.source);
             var target = Graph.getDataNodeById(linkEditionStatus.target);
@@ -163,6 +163,7 @@ function createLinkManager(linkEditionStatus, node) {
                 );
                 Graph.selectLink(newLink._id);
                 Graph.unselectNode();
+                addLinkEventListeners(newLink._id);
                 updateMenu();
             } else {
                 alert("Contrainte de liaison. Impossible de créer cette relation entre ces types de cartes.");
@@ -190,7 +191,6 @@ function resetLinkEdition() {
  */
 function editLink() {
     Graph.editLinkLabel(Graph.selectedLink, linkLabelInput.val());
-    console.log("Renommage d'un lien");
 }
 
 /**
@@ -223,17 +223,17 @@ function removeLink() {
     // TODO : supprimer en BDD.
     Graph.unselectLink();
     updateMenu();
-    console.log("Suppression d'un lien");
 }
 
 /******************************************************************
  *** EVENTS                                                     ***
  ******************************************************************/
 
-// Apparition du menu.
+// Menu général
 nodes.click(updateMenu);
 links.click(updateMenu);
 svgContainer.click(updateMenu);
+svgContainer.click(resetLinkEdition);
 
 // Menu création
 nodeCreatorButton.click(createNode);
@@ -248,6 +248,27 @@ linkTypeSelection.change(changeLinkType);
 deleteLinkButton.click(removeLink);
 validateLinkButton.click(editLink);
 nodes.click(function () { createLinkManager(linkEditionStatus, Graph.selectedNode); });
+
+/**
+ * Ajoute tous les event listeners liés à un noeud.
+ * Cette fonction doit être utilisée quand un nouveau noeud est créé.
+ * @param id int
+ */
+function addNodeEventListeners(id) {
+    var node = $(Graph.getDomNodeById(id));
+    node.click(updateMenu);
+    node.click(function () { createLinkManager(linkEditionStatus, Graph.selectedNode); });
+}
+
+/**
+ * Ajoute tous les event listeners liés à un lien.
+ * @param id int
+ */
+function addLinkEventListeners(id) {
+    var link = $("#link-label-" + id);
+    console.log(link);
+    link.click(updateMenu);
+}
 
 // Raccourcis clavier
 $(window).keyup(function (e) {
@@ -281,18 +302,27 @@ function canCreateLink(nodeSource, nodeTarget, linkType) {
     var validation = true;
     switch (linkType) {
         case "instance of":
-            if(nodeSource.type !== "object" || nodeTarget.type !== "concept")
+            if(nodeSource.type != "object" || nodeTarget.type != "concept")
                 validation = false;
             break;
         case "ako":
-            if(nodeSource.type !== "concept" || nodeTarget.type !== "concept")
+            if(nodeSource.type != "concept" || nodeTarget.type != "concept")
                 validation = false;
             break;
         case "association":
-            if(nodeSource.type !== "concept" || nodeTarget.type !== "concept")
+            if(nodeSource.type != "concept" || nodeTarget.type != "concept")
                 validation = false;
             break;
         default: validation = false;
     }
     return validation;
+}
+
+/******************************************************************
+ *** EXPORTS                                                    ***
+ ******************************************************************/
+
+export {
+    addNodeEventListeners,
+    addLinkEventListeners
 }
