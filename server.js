@@ -87,7 +87,7 @@ app.post("/graph/deleteOne", function (req,res) {
                 graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
             });
         });
-    });
+});
 });
 
 //------------------------------------------------------------

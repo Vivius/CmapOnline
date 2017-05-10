@@ -34,11 +34,13 @@ var app = new Vue({
             });
         },
         deleteGraph: function (event) {
-            console.log(event);
             this.$http.post('/graph/deleteOne',{_id: event}).then(response => {
             }, response => {
             });
             app.getAllGraphs();
+        },
+        redirectToGraph: function(event) {
+            window.location.href = '/edit/'+event;
         }
     },
     filters: {
