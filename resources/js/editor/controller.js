@@ -4,6 +4,7 @@
 
 import $ from "jquery"
 import * as Graph from "./graph"
+import * as Networker from "./networker"
 
 /******************************************************************
  *** VARIABLES                                                  ***
@@ -89,13 +90,13 @@ function updateMenu() {
  * Fonction appelée quand on crée un nouveau noeud.
  */
 function createNode() {
-    var uniqId =  new Date().valueOf();
-    Graph.addNode({_id: uniqId, name: "NEW", type: function (id) {
+    Networker.addNode({name: "NEW", type: function (id) {
         return id === "concept-creator" ? "concept" : "object";
-    }($(this).attr("id"))});
-    Graph.selectNode(uniqId);
-    updateMenu();
-    // TODO : ajout en BDD et socket emit.
+    }($(this).attr("id"))}, function (node) {
+        Graph.addNode(node);
+        Graph.selectNode(node._id);
+        updateMenu();
+    });
 }
 
 /**
