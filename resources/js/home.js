@@ -15,7 +15,8 @@ var app = new Vue({
         styleObject: {
             'visibility': 'visible',
         },
-        items:[]
+        items:[],
+        confirm: -1
     },
     methods: {
         insertGraph: function (event) {

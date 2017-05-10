@@ -47,10 +47,10 @@
                 {{ item._id }}
             </div>
             <div class="cell">
-                <button v-on:click="confirm = true" v-if="confirm == false">Delete</button>
-                <div :id=index class="confirm" v-if="confirm">Are you sure ?
-                    <button v-on:click="deleteGraph(item._id)">Yes</button>
-                    <button v-on:click="confirm = false">No</button>
+                <button v-on:click="confirm = index" v-if="confirm == -1 || confirm != index">Delete</button>
+                <div :id=index class="confirm" v-if="confirm == index">Are you sure ?
+                    <button v-on:click="deleteGraph(item._id); confirm = -1">Yes</button>
+                    <button v-on:click="confirm = -1">No</button>
                 </div>
             </div>
         </div>
