@@ -4,6 +4,7 @@
 
 import $ from 'jquery';
 import * as d3 from 'd3';
+import * as Networker from "./networker"
 import bowser from 'bowser';
 import {intersect, shape} from 'svg-intersections';
 
@@ -324,7 +325,9 @@ function nodeDragStart(node) {
 /**
  * Evénement appelé lorsque l'on arrête de déplacer une carte.
  */
-function nodeDragEnd() { }
+function nodeDragEnd() {
+    Networker.updateNode(getDataNodeById(selectedNode));
+}
 
 /**
  * Lorque l'on doule clic sur une carte, on la libère.
@@ -407,6 +410,23 @@ function addNode(node) {
 function editNodeLabel(id, newLabel) {
     getDataNodeById(id).name = newLabel;
     d3.select(getDomNodeById(id)).select("text").text("< " + newLabel + " >");
+}
+
+/**
+ * Met à jour la position d'un noeud manuellement.
+ * @param id
+ * @param x
+ * @param y
+ */
+function updateNodePosition(id, x, y) {
+    var node = getDataNodeById(id);
+    if(node != null) {
+        node.x = x;
+        node.y = y;
+        node.px = x;
+        node.py = y;
+        update();
+    }
 }
 
 /**
@@ -579,6 +599,7 @@ export {
 
     addNode,
     editNodeLabel,
+    updateNodePosition,
     removeNode,
     getDataNodeById,
     getD3NodeById,
