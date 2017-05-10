@@ -2,7 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongo = require("mongodb").MongoClient;
 var objectID = require("mongodb").ObjectID;
-var DB = "mongodb://localhost/cmap";
+var DB = "mongodb://localhost/CmapDb";
 
 // Test de onnection à MongoDB.
 mongo.connect(DB, function(error, db) {
@@ -54,6 +54,7 @@ function convertNodeForDatabase(node) {
     return node;
 }
 
+
 //------------------------------------------------------------
 // ROUTES
 //------------------------------------------------------------
@@ -84,10 +85,38 @@ app.get("/graph/get/:id", function (req, res) {
 });
 
 /**
+ * Retourne la liste de tous les graphes.
+ */
+app.get("/graph/getAll", function (req, res) {
+    mongo.connect(DB, function(error, db) {
+        db.collection("graphs").find().toArray(function(err, documents) {
+            res.json(documents);
+        });
+    })
+});
+
+/**
  * Permet de créer un nouveau graphe.
  */
-app.get("/graph/create", function () {
-    // TODO : retourn un nouveau graphe après l'avoir ajouté en base.
+app.post("/graph/create", function (req,res) {
+    req.body["date"] =  Date.now();
+    mongo.connect(DB, function(error, db) {
+        db.collection("graphs").insert(req.body, null, function (error, results) {
+            res.json(results.ops[0]);
+        });
+    })
+});
+
+/**
+ * Supprimer un graphe grâce à son id
+ */
+app.post("/graph/deleteOne", function (req,res) {
+    mongo.connect(DB, function (error, db) {
+        db.collection('graphs', {}, function (err, graphs) {
+            graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
+            });
+        });
+    });
 });
 
 /**
