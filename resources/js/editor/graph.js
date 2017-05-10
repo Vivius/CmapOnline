@@ -22,14 +22,6 @@ var colors = d3.scale.category10();
 var nodes, links, linkLabels;
 var selectedNode = null, selectedLink = null;
 
-var linkEditionStatus = {
-    type: null,
-    source: null,
-    target: null,
-    enable: false,
-    button: null
-};
-
 /******************************************************************
  *** JEU DE DONNEES                                             ***
  ******************************************************************/
