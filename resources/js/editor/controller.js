@@ -28,9 +28,9 @@ var deleteLinkButton = $("#menu-link-delete");
 var validateLinkButton = $("#menu-link-validate");
 
 var linkEditionStatus = {
-    type: null,
-    source: null,
-    target: null,
+    type: "",
+    source: -1,
+    target: -1,
     enable: false,
     button: null
 };
@@ -38,6 +38,8 @@ var linkEditionStatus = {
 /******************************************************************
  *** MENU FUNCTIONS                                             ***
  ******************************************************************/
+
+// Menu display
 
 /**
  * Met à jour l'affichage de la carte sélectionnée dans le menu latéral.
@@ -81,6 +83,8 @@ function updateMenu() {
     updateNodePanel(Graph.selectedNode);
 }
 
+// Nodes
+
 /**
  * Fonction appelée quand on crée un nouveau noeud.
  */
@@ -113,11 +117,71 @@ function removeNode() {
     console.log("Suppression d'un noeud");
 }
 
+// Links
+
 /**
  * Fonction appelée quand on crée un nouveau lien.
  */
 function createLink() {
+    linkEditionStatus.enable = true;
+    linkEditionStatus.button = $(this);
+    switch ($(this).attr("id")) {
+        case "ako-creator":
+            linkEditionStatus.type = "ako";
+            break;
+        case "instance-of-creator":
+            linkEditionStatus.type = "instance of";
+            break;
+        case "association-creator":
+            linkEditionStatus.type = "association";
+            break;
+    }
+    $(this).addClass("selected");
+}
 
+/**
+ * Gère les création de liens.
+ * @param linkEditionStatus object
+ * @param node int
+ */
+function createLinkManager(linkEditionStatus, node) {
+    console.log("Create link manager !");
+    if(linkEditionStatus.enable) {
+        if(linkEditionStatus.source === -1) linkEditionStatus.source = node;
+        else if(linkEditionStatus.target === -1) {
+            linkEditionStatus.target = node;
+            var source = Graph.getDataNodeById(linkEditionStatus.source);
+            var target = Graph.getDataNodeById(linkEditionStatus.target);
+            if(canCreateLink(source, target, linkEditionStatus.type)) {
+                var newLink = Graph.addLink(
+                    linkEditionStatus.source,
+                    linkEditionStatus.target,
+                    new Date().valueOf(),
+                    linkEditionStatus.type,
+                    linkEditionStatus.type
+                );
+                Graph.selectLink(newLink._id);
+                Graph.unselectNode();
+                updateMenu();
+            } else {
+                alert("Contrainte de liaison. Impossible de créer cette relation entre ces types de cartes.");
+            }
+            resetLinkEdition();
+        }
+    } else {
+        resetLinkEdition();
+    }
+}
+
+/**
+ * Réinitialise l'état d'édition d'un lien.
+ */
+function resetLinkEdition() {
+    linkEditionStatus.source = -1;
+    linkEditionStatus.target = -1;
+    linkEditionStatus.type = null;
+    linkEditionStatus.enable = false;
+    linkCreatorButton.removeClass("selected");
 }
 
 /**
@@ -172,6 +236,7 @@ svgContainer.click(updateMenu);
 
 // Menu création
 nodeCreatorButton.click(createNode);
+linkCreatorButton.click(createLink);
 
 // Menu noeud
 deleteNodeButton.click(removeNode);
@@ -181,6 +246,7 @@ validateNodeButton.click(editNode);
 linkTypeSelection.change(changeLinkType);
 deleteLinkButton.click(removeLink);
 validateLinkButton.click(editLink);
+nodes.click(function () { createLinkManager(linkEditionStatus, Graph.selectedNode); });
 
 // Raccourcis clavier
 $(window).keyup(function (e) {
