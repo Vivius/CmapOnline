@@ -24,10 +24,10 @@
                        <input v-model="password" type="password" name="password" for="password">
                    </div>
                    <div class="confirm-password">
-                       <template v-if="show">
+                       <div v-if="show">
                            <label id="confirm-password">Confirm password</label>
                            <input type="password" name="confirm-password" for="confirm-password">
-                       </template>
+                       </div>
                    </div>
                </div>
 
@@ -36,7 +36,7 @@
                         <button type="submit">{{ button }}</button>
                     </div>
                     <div class="sign">
-                        <p @click="change">{{ text }}</p>
+                        <p @click="changes">{{ text }}</p>
                     </div>
                 </div>
             </form>

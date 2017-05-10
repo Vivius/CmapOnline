@@ -1,4 +1,4 @@
-import Vue from 'vue/dist/vue.js';
+import Vue from 'vue';
 import VueResource from 'vue-resource';
 
 Vue.use(VueResource);
@@ -13,7 +13,7 @@ var sign = new Vue({
         password: ''
     },
     methods: {
-        change: function () {
+        changes: function () {
             this.text = this.text == 'Or sign up' ? 'Or sign in' : 'Or sign up';
 
             if(this.button == 'Sign up') {
@@ -25,11 +25,11 @@ var sign = new Vue({
             }
         },
         postConnection: function () {
-            this.$http.post('/connect', {user: { pseudo: this.pseudo, password: this.password}}).then(response => {
+            this.$http.post('/connect', { pseudo: this.pseudo, password: this.password}).then(response => {
                 console.log('success', response);
             }, response => {
                 console.log('erreur', response);
             });
         }
     }
-})
+});

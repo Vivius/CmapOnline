@@ -69,9 +69,10 @@ app.get('/', function (req, res) {
 /**
  * Recherche un utilisateur en base
  */
-app.post('/connect', function (req) {
+app.post('/connect', function (req, res) {
     mongo.connect(DB, function(error, db) {
-        db.collection("users").find(req.user);
+        res.json(db.collection("users").find(req) != null);
+        console.log(req);
     });
 });
 
