@@ -4,6 +4,7 @@ var mongo = require("mongodb").MongoClient;
 var objectID = require("mongodb").ObjectID;
 var session = require('express-session');
 var DB = "mongodb://localhost/cmap";
+var bcrypt = require("bcrypt-nodejs");
 
 // Test de onnection à MongoDB.
 mongo.connect(DB, function(error, db) {
@@ -24,7 +25,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 //------------------------------------------------------------
-// HELPERS
+// HELPERSS
 //------------------------------------------------------------
 
 //------------------------------------------------------------
@@ -44,11 +45,28 @@ app.get('/', function (req, res) {
  */
 app.post("/login", function (req,res) {
     mongo.connect(DB, function (error, db) {
-        db.collection("users").find(req.body).toArray(function(err, documents) {
-            if(documents[0] != null) {
+        db.collection("users").find({mail: req.body.mail}).toArray(function(err, documents) {
+            if(documents[0] != null && bcrypt.compareSync(req.body.password, documents[0].password)) {
+                res.json(true);
+            } else
+                res.json(false);
+        });
+    });
+});
 
+/**
+ * Insertion d'un utilisateur
+ */
+app.post("/signup", function (req,res) {
+    mongo.connect(DB, function (error, db){
+        db.collection("users").find({mail: req.body.mail}).toArray(function(err, documents) {
+            if(typeof documents[0] != 'undefined') res.json(false);
+            else {
+                var salt = bcrypt.genSaltSync(10);
+                var hash = bcrypt.hashSync(req.body.password, salt);
+                req.body.password = hash;
+                db.collection("users").insert(req.body, null, res.json(true));
             }
-            res.json(documents);
         });
     });
 });

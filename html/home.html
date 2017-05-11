@@ -12,7 +12,7 @@
     <div id="app">
 
     <div class="menu">
-        <div id="logo"><a href="/home"><img src="images/home/network.png"  alt="Network logo"></a></div>
+        <div id="logo"><a href="/home"><img src="/images/home/network.png"  alt="Network logo"></a></div>
         <div id="title">CmapOnline</div>
         <button class="menuButton" id="new"  v-on:click="seen = true">New graph</button>
         <button class="menuButton" id="logout">Log out</button>
@@ -47,8 +47,8 @@
                 {{ item._id }}
             </div>
             <div align='right' class="cell">
-                <image src="images/home/edit.png" v-on:click="redirectToGraph(item._id)"></image>
-                <image src="images/home/eraser.png" v-on:click="confirm = index" v-if="confirm == -1 || confirm != index"></image>
+                <image src="/images/home/edit.png" v-on:click="redirectToGraph(item._id)"></image>
+                <image src="/images/home/eraser.png" v-on:click="confirm = index" v-if="confirm == -1 || confirm != index"></image>
                 <div :id=index class="confirm" v-if="confirm == index">Are you sure ?
                     <button v-on:click="deleteGraph(item._id); confirm = -1">Yes</button>
                     <button v-on:click="confirm = -1">No</button>
@@ -61,7 +61,7 @@
 
         <div v-if="seen" v-bind:style="styleObject" id="black_overlay" style="width: 100%;"> </div>
         <div v-if="seen" v-bind:style="styleObject" class="added" style="display: block;">
-            <img src="images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seen = false">
+            <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seen = false">
             <h3>New graph</h3>
             <input type="text" v-model="name" placeholder="Graph name">
             <button v-on:click="insertGraph">Create</button>
