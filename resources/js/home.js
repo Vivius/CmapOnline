@@ -16,28 +16,31 @@ var app = new Vue({
             'visibility': 'visible',
         },
         items:[],
-        confirm: -1
+    },
+    created:function() {
+        this.getAllGraphs();
     },
     methods: {
         insertGraph: function (event) {
             this.seen = false;
             this.$http.post('/graph/create', {name: this.name }).then(response => {
+                this.getAllGraphs();
             }, response => {
             });
             this.name = '';
-            app.getAllGraphs();
         },
         getAllGraphs: function (event) {
             this.$http.get('/graph/getAll').then(response => {
                 this.items = response.body;
+                console.log(this.items);
             }, response => {
             });
         },
         deleteGraph: function (event) {
             this.$http.post('/graph/deleteOne',{_id: event}).then(response => {
+                this.getAllGraphs();
             }, response => {
             });
-            app.getAllGraphs();
         },
         redirectToGraph: function(event) {
             window.location.href = '/edit/'+event;
@@ -62,6 +65,3 @@ var app = new Vue({
         }
     }
 })
-
-
-app.getAllGraphs();

@@ -104,6 +104,7 @@ app.post("/graph/deleteOne", function (req,res) {
     mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
                 graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
+                res.end();
             });
         });
     });
