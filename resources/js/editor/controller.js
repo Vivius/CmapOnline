@@ -11,6 +11,7 @@ import * as Networker from "./networker"
  ******************************************************************/
 
 var svgContainer = $("#svg-container");
+var menu = $("#menu");
 var nodes = $(".node");
 var links = $(".link-label");
 
@@ -49,12 +50,19 @@ var linkEditionStatus = {
 function updateNodePanel(id) {
     var node = Graph.getDataNodeById(id);
     if(node == null) {
-        nodeMenu.fadeOut();
+        if(Graph.selectedLink != -1) {
+            nodeMenu.slideUp("fast");
+        } else {
+            nodeMenu.slideUp("fast", function () {
+                menu.removeClass("bigger");
+            });
+        }
     } else {
         nodeNameInput.val(node.name);
         nodeCommentTextArea.val(node.comment);
-        nodeMenu.fadeIn(function () {
+        nodeMenu.slideDown("fast", function () {
             nodeNameInput[0].focus();
+            menu.addClass("bigger");
         });
     }
 }
@@ -66,11 +74,18 @@ function updateNodePanel(id) {
 function updateLinkPanel(id) {
     var link = Graph.getDataLinkById(id);
     if(link == null) {
-        linkMenu.fadeOut();
+        if(Graph.selectedNode != -1) {
+            linkMenu.slideUp("fast");
+        } else {
+            linkMenu.slideUp("fast", function () {
+                menu.removeClass("bigger");
+            });
+        }
     } else {
         linkLabelInput.val(link.label);
         linkTypeSelection.val(link.type);
-        linkMenu.fadeIn(function () {
+        linkMenu.slideDown("fast", function () {
+            menu.addClass("bigger");
             linkLabelInput[0].focus();
         });
     }
