@@ -58,6 +58,15 @@ app.get('/home', function(req, res) {
 });
 
 /**
+ * Affichage de la page de lecture du graphe spécifié.
+ */
+app.get("/view/:id", function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/editor.html');
+});
+
+
+/**
  * Affichage de la page d'édition du graphe spécifié.
  */
 app.get("/edit/:id", function (req, res) {
@@ -104,6 +113,7 @@ app.post("/graph/deleteOne", function (req,res) {
     mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
                 graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
+                res.end();
             });
         });
     });

@@ -14,6 +14,13 @@
   border: 0px;
 }
 
+ #user{
+   display: inline-block;
+   float:right;
+   color:white;
+   margin-top: 12px;
+ }
+
 .menuButton:hover{
   background-color: #ffffff;
 }
@@ -43,6 +50,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-smoothing: antialiased;
   background: white;
+  min-width: 580px;
 }
 
 .wrapper {
@@ -85,7 +93,6 @@ body {
 @media screen and (max-width: 580px) {
   .row {
     padding: 8px 0;
-    display: block;
   }
 }
 
@@ -97,7 +104,6 @@ body {
 @media screen and (max-width: 580px) {
   .cell {
     padding: 2px 12px;
-    display: block;
   }
 }
 
@@ -113,7 +119,7 @@ body {
 
 .added {
   width: 320px;
-  height: 100px;
+  height: auto;
   border: 2px solid #a5a5a5;
   padding: 20px;
   visibility: hidden;
@@ -137,6 +143,9 @@ body {
   z-index: 50;
 }
 
+
+
+
 .close {
   float: right;
   position: absolute;
@@ -150,6 +159,10 @@ input {
   height: 35px;
   box-shadow: 1px 1px 1px 1px grey;
   border-radius: 3px;
+}
+
+#user{
+
 }
 
 #logo{
@@ -175,4 +188,21 @@ button{
 }
 img{
   cursor: pointer;
+}
+
+#titleGraph{
+  padding: 5px;
+  color:white;
+  border-bottom: 2px solid #2980b9;
+  background-color:  #2980b9;
+}
+
+.cell img{
+  margin:auto;
+  width:32px;
+  display:block;
+}
+.action{
+  width: 50px;
+  text-align: center;
 }
