@@ -15,7 +15,9 @@ var sign = new Vue({
         wrongLogin: false,
         wrongConfirm: false,
         empty: false,
-        existMail: false
+        existMail: false,
+        passwordLength: false,
+        mailFormat: false
     },
     methods: {
         changes: function () {
@@ -39,8 +41,10 @@ var sign = new Vue({
         createAccount: function () {
             this.empty = false;
             this.existMail = false;
+            this.passwordLength = false;
+            this.mailFormat = false;
             var empty = (this.mail == null) || (this.password == null) || (this.firstname == null) || (this.lastname == null);
-            var error = empty || (this.password != this.confirmPassword);
+            var error = empty || (this.password != this.confirmPassword) || (this.password.length < 6) || (!validateEmail(this.mail));
             if(!error) {
                 this.$http.post('/signup', {
                     mail: this.mail,
@@ -60,8 +64,15 @@ var sign = new Vue({
                 this.empty = true;
             } else if(this.password != this.confirmPassword) {
                 this.wrongConfirm = true;
-            }
-
+            } else if(this.password.length < 6)
+                this.passwordLength = true;
+            else if(!validateEmail(this.mail))
+                this.mailFormat = true;
         }
     }
 });
+
+function validateEmail(email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}

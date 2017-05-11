@@ -68,6 +68,12 @@
                     <div v-if="existMail">
                         <p class="warning">This mail is used</p>
                     </div>
+                    <div v-if="passwordLength">
+                        <p class="warning">Password require 6 char. or more</p>
+                    </div>
+                    <div v-if="mailFormat">
+                        <p class="warning">Wrong mail format</p>
+                    </div>
                 </div>
 
                 <div class="form-login">
