@@ -97,20 +97,34 @@
 
         <div v-if="seenBoxAccess" v-bind:style="styleObject" class="added boxAccess" style="display: block;">
             <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seenBoxAccess = false;seenBlackOverlay = false">
-            <h3>Current access permission : </h3>
-            <div class="row header red">
-                <div class="cell">
-                    Mail
+            <div class="currentAccess">
+                <h3>Current access permission : </h3>
+                <div class="row header red ">
+                    <div class="cell">
+                        Mail
+                    </div>
+                    <div class="cell">
+                        Read
+                    </div>
+                    <div class="cell">
+                        Write
+                    </div>
                 </div>
-                <div class="cell">
-                    Read
-                </div>
-                <div class="cell">
-                    Write
+                <div class="row">
+                    <div class="cell">
+                        victor.basset@yahoo.fr
+                    </div>
+                    <div class="cell">
+                        Yes
+                    </div>
+                    <div class="cell">
+                        No
+                    </div>
                 </div>
             </div>
             <h3>Add access permission : </h3>
             <input type="text" v-model="mail" placeholder="Address mail">
+            <button v-on:click="addAccess">Add</button>
         </div>
     </div>
     <script src="/js/home.js"></script>
