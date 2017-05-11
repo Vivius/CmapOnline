@@ -17,6 +17,7 @@
     "jquery": "^3.1.1",
     "md5": "^2.1.0",
     "mongodb": "^2.1.4",
+    "node-session": "^1.2.1",
     "socket.io": "^1.4.5",
     "svg-intersections": "^0.3.0",
     "vue": "^2.3.3",

@@ -42,10 +42,14 @@ app.get('/', function (req, res) {
 /**
  * Recherche un utilisateur en base
  */
-app.post('/connect', function (req, res) {
-    mongo.connect(DB, function(error, db) {
-        res.json(db.collection("users").find(req) != null);
-        console.log(req);
+app.post("/login", function (req,res) {
+    mongo.connect(DB, function (error, db) {
+        db.collection("users").find(req.body).toArray(function(err, documents) {
+            if(documents[0] != null) {
+
+            }
+            res.json(documents);
+        });
     });
 });
 
@@ -103,7 +107,7 @@ app.post("/graph/create", function (req,res) {
 app.post("/graph/deleteOne", function (req,res) {
     mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
-                graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
+            graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
             });
         });
     });
@@ -143,7 +147,7 @@ io.on('connection', function(socket) {
                 function (error, results) {
                     io.emit("node/updated", node);
                     console.log("NODE " + node._id + " UPDATED");
-            });
+                });
         });
     });
     // Suppression d'un noeud
