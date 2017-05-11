@@ -10,19 +10,24 @@ var app = new Vue({
     el: '#app',
     data: {
         name: '',
-        seen: false,
-        confirm: -1,
+        mail: '',
+        seenBoxAccess: false,
+        seenBlackOverlay: false,
+        seenBoxNewGraph: false,
+        seenBoxConfirm:false,
         styleObject: {
             'visibility': 'visible',
         },
         items:[],
+        itemID: 0,
     },
     created:function() {
         this.getAllGraphs();
     },
     methods: {
         insertGraph: function (event) {
-            this.seen = false;
+            this.seenBoxNewGraph = false;
+            this.seenBlackOverlay = false;
             this.$http.post('/graph/create', {name: this.name }).then(response => {
                 this.getAllGraphs();
             }, response => {
@@ -37,13 +42,18 @@ var app = new Vue({
             });
         },
         deleteGraph: function (event) {
+            this.seenBoxConfirm = false;
+            this.seenBlackOverlay = false;
             this.$http.post('/graph/deleteOne',{_id: event}).then(response => {
                 this.getAllGraphs();
             }, response => {
             });
         },
-        redirectToGraph: function(event) {
+        redirectToEditor: function(event) {
             window.location.href = '/edit/'+event;
+        },
+        redirectToViewer: function(event) {
+            window.location.href = '/view/'+event;
         }
     },
     filters: {

@@ -58,6 +58,15 @@ app.get('/home', function(req, res) {
 });
 
 /**
+ * Affichage de la page de lecture du graphe spécifié.
+ */
+app.get("/view/:id", function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/editor.html');
+});
+
+
+/**
  * Affichage de la page d'édition du graphe spécifié.
  */
 app.get("/edit/:id", function (req, res) {
