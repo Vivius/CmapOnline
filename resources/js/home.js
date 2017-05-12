@@ -9,7 +9,6 @@ Vue.use(VueResource);
 var app = new Vue({
     el: '#app',
     data: {
-        owner:'',
         name: '',
         mail: '',
         seenBoxAccess: false,
@@ -19,6 +18,7 @@ var app = new Vue({
         styleObject: {
             'visibility': 'visible',
         },
+        currentUser:[],
         graphs:[],
         read:[],
         write:[],
@@ -26,16 +26,26 @@ var app = new Vue({
     },
     created:function() {
         this.getAllGraphs();
+        this.getCurrentUser();
+        this.owner = this.currentUser.mail;
+        console.log( this.owner);
+
     },
     methods: {
         insertGraph: function () {
             this.seenBoxNewGraph = false;
             this.seenBlackOverlay = false;
-            this.$http.post('/graph/create', {name: this.name, read: [{mail : 'ludoletroubadoure@gmail.com'}], write: [{mail:'vivus@troll.com'}], owner: 'victor.basset@yahoo.fr'}).then(response => {
+            this.$http.post('/graph/create', {name: this.name, read: [{mail : 'ludoletroubadoure@gmail.com'}], write: [{mail:'vivus@troll.com'}], owner: this.currentUser.mail}).then(response => {
                 this.getAllGraphs();
             }, response => {
             });
             this.name = '';
+        },
+        logout: function () {
+            this.$http.post('/logout').then(response => {
+                window.location.href = '/';
+            }, response => {
+            });
         },
         getAllGraphs: function () {
             this.$http.get('/graph/getAll').then(response => {
@@ -45,11 +55,8 @@ var app = new Vue({
         },
         getAccess: function(id){
             this.$http.post('/graph/getAccess',{_id: id}).then(response => {
-                this.owner = response.body[0]['owner'];
                 this.read = response.body[0]['read'];
                 this.write = response.body[0]['write'];
-                console.log(this.read);
-                console.log(this.write);
             }, response => {
             });
         },
@@ -63,6 +70,12 @@ var app = new Vue({
         },
         addAccess: function () {
 
+        },
+        getCurrentUser: function () {
+            this.$http.get('/user/current').then(response => {
+                this.currentUser = response.body;
+            }, response => {
+            });
         },
         redirectToEditor: function(event) {
             window.location.href = '/edit/'+event;
