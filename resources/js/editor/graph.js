@@ -18,8 +18,8 @@ var svgContainer = "#svg-container";
 // Configuration
 var width = $(svgContainer).width(), height = $(svgContainer).height();
 var linkDistance = 300;
+var conceptColor = "#ffc55a", objectColor = "#7ba1ff";
 var nodeWidth = 160, nodeHeight = 50;
-var colors = d3.scale.category10();
 var nodes, links, linkLabels;
 var selectedNode = null, selectedLink = null;
 
@@ -74,10 +74,6 @@ var dataset = {
 var svg = d3
     .select(svgContainer)
     .append("svg")
-    .attr({
-        "width": width,
-        "height": height
-    })
     .call(d3.behavior.zoom().on("zoom", function () {
         svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
     }))
@@ -187,7 +183,7 @@ function update() {
             "rx": function (d) { return d.type == "concept" ? 10 : 0; },
             "ry": function (d) { return d.type == "concept" ? 10 : 0; }
         })
-        .style("fill", function (d) { return d.type == "concept" ? "#FFC44E" : "#AF813C"; });
+        .style("fill", function (d) { return d.type == "concept" ? conceptColor : objectColor; });
     nodes
         .append("text")
         .attr({
@@ -244,13 +240,7 @@ function update() {
  * Permet de recalculer la taille du svg et du force layout.
  */
 $(window).resize(function() {
-    width = $(svgContainer).width();
-    height = $(svgContainer).height();
-    svg.attr({
-        "width": width,
-        "height": height,
-    });
-    force.size([width, height]);
+    force.size([$(svgContainer).width(), $(svgContainer).height()]);
     force.start();
 });
 
@@ -337,6 +327,7 @@ function nodeDragEnd() {
 function nodeDbClick(node) {
     d3.event.stopPropagation(); // Stop l'event zoom lors du double clic.
     d3.select(this).classed("fixed", node.fixed = false);
+    Networker.updateNode(getDataNodeById(selectedNode));
     unselectNode();
 }
 
@@ -408,8 +399,10 @@ function addNode(node) {
  * @param newLabel String
  */
 function editNodeLabel(id, newLabel) {
-    getDataNodeById(id).name = newLabel;
-    d3.select(getDomNodeById(id)).select("text").text("< " + newLabel + " >");
+    var node = getDataNodeById(id);
+    var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
+    node.name = newLabel;
+    d3.select(getDomNodeById(id)).select("text").text(formattedLabel);
 }
 
 /**

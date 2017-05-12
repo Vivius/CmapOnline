@@ -1,83 +1,175 @@
+$conceptColor: #ffc55a;
+$objectColor: #7ba1ff;
+$titleCornerSize: 16px;
+$menuWidth: 120px;
+
 html {
   height: 100%;
   body {
     height: 100%;
     main {
       height: 100%;
+
+      // Style du menu
       #menu {
-        width: 20%;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: $menuWidth;
         height: 100%;
-        float: right;
-        overflow: hidden;
+        background-color: rgba(137,137,137,0.75);
+        box-shadow: 0 0 10px;
+        &.bigger {
+          width: 300px;
+          transition: width 0.3s;
+        }
+        &.smaller {
+          width: $menuWidth;
+          transition: width 0.3s;
+        }
+
+        // Menu affiché lors de la sélection d'un noeud.
         #menu-node {
           display: none;
+
           textarea {
+            box-sizing: border-box;
+            display: block;
             width: 100%;
             min-height: 50px;
+            border-left: 5px solid rgba(0, 0, 0, 0.6);
+            background-color: #ffffff;
+            outline: none;
           }
         }
+
+        // Menu affiché lors de la sélection d'un lien.
         #menu-link {
           display: none;
           select {
+            box-sizing: border-box;
             width: 100%;
             padding: 5px;
-            margin-bottom: 5px;
+            border-left: 5px solid rgba(0, 0, 0, 0.6);
           }
         }
+
+        // Menu avec les boutons d'ajout de noeuds et liens.
         #menu-tools {
           text-align: center;
+
+          // Boutons ajout noeud.
           .node-creator {
-            display: inline-block;
             border: 0;
-            width: 40%;
-            height: 50px;
-            background-color: #aeff9e;
-            line-height: 50px;
+            width: 100%;
+            border-left: 5px solid rgba(0, 0, 0, 0.4);
+            padding: 20px;
             font-weight: bold;
             &:hover {
               cursor: pointer;
             }
           }
+
+          #concept-creator {
+            background-color: $conceptColor;
+            &:hover {
+              background-color: #ffe12f;
+            }
+          }
+
+          #object-creator {
+            background-color: $objectColor;
+            &:hover {
+              background-color: #2aaaff;
+            }
+          }
+
+          // Bouton ajout lien.
           .link-creator {
-            display: inline-block;
             border: 0;
-            width: 40%;
-            margin: 5px;
-            height: 50px;
-            background-color: #afd0ff;
-            line-height: 50px;
+            border-left: 5px solid rgba(0, 0, 0, 0.6);
+            width: 100%;
+            padding: 20px;
+            background-color: #adbbaf;
             font-weight: bold;
             &:hover {
               cursor: pointer;
+              background-color: #f4ffec;
+            }
+            &.selected {
+              background-color: #f4ffec;
             }
           }
-          .selected {
-            background-color: red;
-          }
         }
-        h2 {
-          padding: 10px;
-          font-size: 18px;
-          font-weight: bold;
-        }
+
         input
         {
-          text-align: center;
-          padding: 5px;
-          margin-bottom: 5px;
+          box-sizing: border-box;
           display: block;
+          text-align: center;
           width: 100%;
+          padding: 5px;
           border: 0;
-          &:hover {
+          outline: none;
+          border-left: 5px solid rgba(0, 0, 0, 0.6);
+          background-color: #ffffff;
+          &[type=button]:hover {
             cursor: pointer;
+          }
+          &[type=text]:hover{
+            cursor: text;
+          }
+          &.validation {
+            background-color: #d3ffb8;
+            font-weight: bold;
+            &:hover {
+              background-color: #8eff72;
+            }
+          }
+          &.deletion {
+            background-color: #ffaaa3;
+            font-weight: bold;
+            &:hover {
+              background-color: #ff5849;
+            }
+          }
+        }
+
+        h2 {
+          position: relative;
+          width: calc(100% - 2*10px + 16px);
+          left: -$titleCornerSize;
+          padding: 10px;
+          font-size: 20px;
+          font-weight: bold;
+          background-color: #e1e1e1;
+          box-shadow: 0 0 3px black;
+          text-align: center;
+          &::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            left: 0;
+            top: 100%;
+            border-width: $titleCornerSize/2 $titleCornerSize/2;
+            border-style: solid;
+            border-color: #666 #666 transparent transparent;
           }
         }
       }
+
+      // Style du graphe
       #svg-container {
-        overflow: hidden;
-        width: 80%;
         height: 100%;
-        float: left;
+        background: url("/images/editor/graph_background.png");
+
+        svg {
+          display: block;
+          height: 100%;
+          width: 100%;
+        }
+
         .node {
           &:hover {
             cursor: grab;
@@ -86,6 +178,7 @@ html {
             cursor: grabbing;
           }
         }
+
         .link-label {
           &:hover {
             cursor: pointer;

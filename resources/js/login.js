@@ -6,29 +6,26 @@ Vue.use(VueResource);
 var sign = new Vue({
     el: '#login',
     data: {
-        text: 'Or sign up',
-        button: 'Login',
-        show: false,
+        show: true,
         pseudo: '',
-        password: ''
+        password: '',
+        confirmPassword: '',
+        wrongLogin: false
     },
     methods: {
         changes: function () {
-            this.text = this.text == 'Or sign up' ? 'Or sign in' : 'Or sign up';
-
-            if(this.button == 'Sign up') {
-                this.button = 'Login';
-                this.show = false;
-            } else {
-                this.button = 'Sign up';
-                this.show = true;
-            }
+            this.show = !this.show;
+            this.pseudo = '';
+            this.password = '';
         },
         postConnection: function () {
-            this.$http.post('/connect', { pseudo: this.pseudo, password: this.password}).then(response => {
-                console.log('success', response);
+            this.$http.post('/login', { pseudo: this.pseudo, password: this.password}).then(response => {
+                if(response.body[0] != null)
+                    window.location.href = '/home/';
+                else
+                    this.wrongLogin = true;
             }, response => {
-                console.log('erreur', response);
+                console.log('erreur', response.body);
             });
         }
     }
