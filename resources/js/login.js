@@ -43,6 +43,7 @@ var sign = new Vue({
             this.existMail = false;
             this.passwordLength = false;
             this.mailFormat = false;
+            this.wrongConfirm = false;
             var empty = (this.mail == null) || (this.password == null) || (this.firstname == null) || (this.lastname == null);
             var error = empty || (this.password != this.confirmPassword) || (this.password.length < 6) || (!validateEmail(this.mail));
             if(!error) {
@@ -50,8 +51,7 @@ var sign = new Vue({
                     mail: this.mail,
                     firstname: this.firstname,
                     lastname: this.lastname,
-                    password: this.password,
-                    confirmPassword: this.password
+                    password: this.password
                 }).then(response => {
                     if(response.body)
                         window.location.href = '/home/';
