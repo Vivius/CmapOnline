@@ -3,7 +3,7 @@ var bodyParser = require('body-parser');
 var mongo = require("mongodb").MongoClient;
 var objectID = require("mongodb").ObjectID;
 var session = require('express-session');
-var DB = "mongodb://localhost/cmap";
+var DB = "mongodb://localhost/CmapDb";
 
 // Test de onnection à MongoDB.
 mongo.connect(DB, function(error, db) {
@@ -94,6 +94,22 @@ app.get("/graph/getAll", function (req, res) {
     mongo.connect(DB, function(error, db) {
         db.collection("graphs").find().toArray(function(err, documents) {
             res.json(documents);
+        });
+    })
+});
+
+/**
+ * Retourne la liste de tous les graphes.
+ */
+app.post("/graph/getAccess", function (req, res) {
+
+    mongo.connect(DB, function(error, db) {
+        var query = {_id: new objectID(req.body['_id'])};
+        var projection = {read:1, write:1, owner:1, _id:0};
+        var cursor = db.collection('graphs').find(query).project(projection);
+        cursor.toArray(function(err, documents) {
+            res.json(documents);
+            console.log(documents);
         });
     })
 });
