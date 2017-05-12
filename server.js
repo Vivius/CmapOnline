@@ -6,7 +6,7 @@ var Session = require('express-session');
 var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require("bcrypt-nodejs");
 
-var DB = "mongodb://localhost/CmapDb";
+var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
 Mongo.connect(DB, function(error, db) {
@@ -130,8 +130,14 @@ app.get("/edit/:id", function (req, res) {
  * TODO : aller chercher en base le graphe demandé avec l'ensemble des ses liens et noeuds.
  */
 app.get("/graph/get/:id", function (req, res) {
-    console.log(req.params["id"]);
-    res.json({ nodes: {}, links: {} });
+    var id = req.params["id"];
+    Mongo.connect(DB, function (error, db) {
+       db.collection("nodes").find({graph_id: id}).toArray(function (err, nodes) {
+           db.collection("links").find({graph_id: id}).toArray(function (err, links) {
+               res.json({nodes: nodes, links: links});
+           });
+       });
+    });
 });
 
 /**
@@ -210,7 +216,7 @@ io.on('connection', function(socket) {
     // Suppression d'un noeud
     socket.on("node/remove", function (node, fn) {
         Mongo.connect(DB, function (error, db) {
-            db.collection('nodes').remove(node, function (error, results) {
+            db.collection('nodes').remove({_id: new ObjectId(node._id)}, function (error, results) {
                 io.emit("node/removed", node);
                 console.log("NODE " + node._id + " REMOVED");
             });
@@ -229,7 +235,7 @@ io.on('connection', function(socket) {
     // Suppression d'un lien
     socket.on("link/remove", function (link, fn) {
         Mongo.connect(DB, function (error, db) {
-            db.collection('links').remove(link, function (error, results) {
+            db.collection('links').remove({_id: new ObjectId(link._id)}, function (error, results) {
                 io.emit("link/removed", link);
                 console.log("LINK " + link._id + " REMOVED");
             });

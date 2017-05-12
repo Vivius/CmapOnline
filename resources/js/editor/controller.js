@@ -5,6 +5,7 @@
 import $ from "jquery"
 import * as Graph from "./graph"
 import * as Networker from "./networker"
+import * as Editor from "./editor"
 
 /******************************************************************
  *** VARIABLES                                                  ***
@@ -12,8 +13,6 @@ import * as Networker from "./networker"
 
 var svgContainer = $("#svg-container");
 var menu = $("#menu");
-var nodes = $(".node");
-var links = $(".link-label");
 
 var nodeCreatorButton = $(".node-creator");
 var nodeMenu = $("#menu-node");
@@ -105,9 +104,15 @@ function updateMenu() {
  * Fonction appelée quand on crée un nouveau noeud.
  */
 function createNode() {
-    Networker.addNode({name: "NEW", type: function (id) {
-        return id == "concept-creator" ? "concept" : "object";
-    }($(this).attr("id"))}, function (node) {
+    Networker.addNode({
+        name: "NEW",
+        type: function (id) {
+            return id == "concept-creator" ? "concept" : "object";
+        }($(this).attr("id")),
+        comment: "",
+        fixed: false,
+        graph_id: Editor.graphId
+    }, function (node) {
         Graph.addNode(node);
         Graph.selectNode(node._id);
         Graph.unselectLink();
@@ -180,6 +185,7 @@ function createLinkManager(linkEditionStatus, node) {
                     target: linkEditionStatus.target,
                     label: linkEditionStatus.type,
                     type: linkEditionStatus.type,
+                    graph_id: Editor.graphId
                 }, function (link) {
                     Graph.addLink(
                         link.source,
@@ -260,8 +266,6 @@ function removeLink() {
  ******************************************************************/
 
 // Menu général
-nodes.click(updateMenu);
-links.click(updateMenu);
 svgContainer.click(updateMenu);
 svgContainer.click(resetLinkEdition);
 
@@ -277,7 +281,6 @@ validateNodeButton.click(editNode);
 linkTypeSelection.change(changeLinkType);
 deleteLinkButton.click(removeLink);
 validateLinkButton.click(editLink);
-nodes.click(function () { createLinkManager(linkEditionStatus, Graph.selectedNode); });
 
 /**
  * Ajoute tous les event listeners liés à un noeud.
