@@ -6,7 +6,7 @@ var Session = require('express-session');
 var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require("bcrypt-nodejs");
 
-var DB = "mongodb://localhost/cmap";
+var DB = "mongodb://localhost/CmapDb";
 
 // Test de onnection à MongoDB.
 Mongo.connect(DB, function(error, db) {
@@ -85,6 +85,30 @@ app.post("/signup", function (req,res) {
         });
     });
 });
+
+/**
+ * Récupérer l'utilisateur courant
+ */
+app.get('/user/current' , function(req, res) {
+    res.json(req.session.user);
+});
+
+/**
+ * Retourne les access du graphs
+ */
+app.post("/graph/getAccess", function (req, res) {
+
+    mongo.connect(DB, function(error, db) {
+        var query = {_id: new objectID(req.body['_id'])};
+        var projection = {read:1, write:1, owner:1, _id:0};
+        var cursor = db.collection('graphs').find(query).project(projection);
+        cursor.toArray(function(err, documents) {
+            res.json(documents);
+            console.log(documents);
+        });
+    })
+});
+
 
 /**
  * Affichage de la homepage.

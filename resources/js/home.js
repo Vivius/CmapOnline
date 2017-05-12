@@ -19,6 +19,7 @@ var app = new Vue({
         styleObject: {
             'visibility': 'visible',
         },
+        currentUser:[],
         graphs:[],
         read:[],
         write:[],
@@ -26,6 +27,7 @@ var app = new Vue({
     },
     created:function() {
         this.getAllGraphs();
+        this.getCurrentUser();
     },
     methods: {
         insertGraph: function () {
@@ -63,6 +65,13 @@ var app = new Vue({
         },
         addAccess: function () {
 
+        },
+        getCurrentUser: function () {
+            this.$http.get('/user/current').then(response => {
+                this.currentUser = response.body;
+                console.log(this.currentUser);
+            }, response => {
+            });
         },
         redirectToEditor: function(event) {
             window.location.href = '/edit/'+event;
