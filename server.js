@@ -4,7 +4,8 @@ var Mongo = require("mongodb").MongoClient;
 var ObjectId = require("mongodb").ObjectID;
 var Session = require('express-session');
 var MongoStore = require('connect-mongo')(Session);
-var Bcrypt = require("bcrypt-nodejs");
+var Bcrypt = require('bcrypt-nodejs');
+var favicon = require('serve-favicon');
 
 var DB = "mongodb://localhost/cmap";
 
@@ -25,6 +26,7 @@ app.use("/js",Express.static(__dirname + '/js'));
 app.use("/html",Express.static(__dirname + '/html'));
 app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({ extended: true }));
+app.use(favicon(__dirname + '/images/favicon/favicon.ico'));
 
 // Initialisation de la session.
 app.use(Session({
@@ -34,6 +36,14 @@ app.use(Session({
     cookie: { secure: false },
     store: new MongoStore({ url: DB})
 }));
+
+// Middleware authentification
+app.use(function (req, res, next) {
+    if(!req.session.user && req.path !== "/" && req.path !== "/login" && req.path !== "/signup") {
+        return res.redirect('/');
+    }
+    next();
+});
 
 //------------------------------------------------------------
 // HELPERSS
@@ -52,7 +62,7 @@ app.get('/', function (req, res) {
 });
 
 /**
- * Recherche un utilisateur en base
+ * Login
  */
 app.post("/login", function (req,res) {
     Mongo.connect(DB, function (error, db) {
@@ -64,6 +74,14 @@ app.post("/login", function (req,res) {
                 res.json(false);
         });
     });
+});
+
+/**
+ * Logout
+ */
+app.post("/logout", function (req,res) {
+    req.session.destroy();
+    res.redirect('/');
 });
 
 /**
@@ -94,7 +112,7 @@ app.get('/user/current' , function(req, res) {
 });
 
 /**
- * Retourne les access du graphs
+ * Retourne les access du graph
  */
 app.post("/graph/getAccess", function (req, res) {
     Mongo.connect(DB, function(error, db) {
