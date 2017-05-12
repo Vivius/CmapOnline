@@ -9,41 +9,66 @@ Vue.use(VueResource);
 var app = new Vue({
     el: '#app',
     data: {
+        owner:'',
         name: '',
-        seen: false,
-        confirm: -1,
+        mail: '',
+        seenBoxAccess: false,
+        seenBlackOverlay: false,
+        seenBoxNewGraph: false,
+        seenBoxConfirm:false,
         styleObject: {
             'visibility': 'visible',
         },
-        items:[],
+        graphs:[],
+        read:[],
+        write:[],
+        graphID: 0,
     },
     created:function() {
         this.getAllGraphs();
     },
     methods: {
-        insertGraph: function (event) {
-            this.seen = false;
-            this.$http.post('/graph/create', {name: this.name }).then(response => {
+        insertGraph: function () {
+            this.seenBoxNewGraph = false;
+            this.seenBlackOverlay = false;
+            this.$http.post('/graph/create', {name: this.name, read: [{mail : 'ludoletroubadoure@gmail.com'}], write: [{mail:'vivus@troll.com'}], owner: 'victor.basset@yahoo.fr'}).then(response => {
                 this.getAllGraphs();
             }, response => {
             });
             this.name = '';
         },
-        getAllGraphs: function (event) {
+        getAllGraphs: function () {
             this.$http.get('/graph/getAll').then(response => {
-                this.items = response.body;
-                console.log(this.items);
+                this.graphs = response.body;
             }, response => {
             });
         },
-        deleteGraph: function (event) {
-            this.$http.post('/graph/deleteOne',{_id: event}).then(response => {
+        getAccess: function(id){
+            this.$http.post('/graph/getAccess',{_id: id}).then(response => {
+                this.owner = response.body[0]['owner'];
+                this.read = response.body[0]['read'];
+                this.write = response.body[0]['write'];
+                console.log(this.read);
+                console.log(this.write);
+            }, response => {
+            });
+        },
+        deleteGraph: function (id) {
+            this.seenBoxConfirm = false;
+            this.seenBlackOverlay = false;
+            this.$http.post('/graph/deleteOne',{_id: id}).then(response => {
                 this.getAllGraphs();
             }, response => {
             });
         },
-        redirectToGraph: function(event) {
+        addAccess: function () {
+
+        },
+        redirectToEditor: function(event) {
             window.location.href = '/edit/'+event;
+        },
+        redirectToViewer: function(event) {
+            window.location.href = '/view/'+event;
         }
     },
     filters: {

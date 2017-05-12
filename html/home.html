@@ -14,10 +14,11 @@
     <div class="menu">
         <div id="logo"><a href="/home"><img src="/images/home/network.png"  alt="Network logo"></a></div>
         <div id="title">CmapOnline</div>
-        <button class="menuButton" id="new"  v-on:click="seen = true">New graph</button>
-        <button class="menuButton" id="logout">Log out</button>
+        <button class="menuButton" id="new"  v-on:click="seenBlackOverlay = true; seenBoxNewGraph = true">New graph</button>
+        <button class="menuButton" onclick="window.location='./'">Log out</button>
+        <div id="user">Victor BASSET</div>
     </div>
-
+        <h1 id="titleGraph">My Graphs</h1>
     <div class="table" >
 
 
@@ -29,45 +30,125 @@
                 Creation date
             </div>
             <div class="cell">
-                Id graph
+                Owner
             </div>
-            <div align='right' class="cell">
-                Edit / Delete
+            <div align='right' class="cell action">
+                Access
+            </div>
+            <div align='right' class="cell action">
+                Export
+            </div>
+            <div align='right' class="cell action">
+                View
+            </div>
+            <div align='right' class="cell action">
+                Edit
+            </div>
+            <div align='right' class="cell action">
+                Delete
             </div>
         </div>
 
-        <div  class="row" v-for="(item,index) in items">
+        <div  class="row" v-for="(graph,index) in graphs">
             <div class="cell">
-                {{ item.name }}
+                {{ graph.name }}
             </div>
             <div class="cell">
-                {{ item.date | convertDate}}
+                {{ graph.date | convertDate}}
             </div>
             <div class="cell">
-                {{ item._id }}
+                Victor BASSET
+            </div>
+            <div align='right' class="cell"  v-on:click="seenBlackOverlay = true; seenBoxAccess = true; getAccess(graph._id)">
+                <img src="/images/home/door-key.png">
             </div>
             <div align='right' class="cell">
-                <image src="/images/home/edit.png" v-on:click="redirectToGraph(item._id)"></image>
-                <image src="/images/home/eraser.png" v-on:click="confirm = index" v-if="confirm == -1 || confirm != index"></image>
-                <div :id=index class="confirm" v-if="confirm == index">Are you sure ?
-                    <button v-on:click="deleteGraph(item._id); confirm = -1">Yes</button>
-                    <button v-on:click="confirm = -1">No</button>
-                </div>
+                <img src="/images/home/export.png">
+            </div>
+            <div align='right' class="cell">
+                <img src="/images/home/eye.png" v-on:click="redirectToViewer(graph._id)">
+            </div>
+            <div align='right' class="cell">
+                <img src="/images/home/edit.png" v-on:click="redirectToEditor(graph._id)">
+            </div>
+            <div align='right' class="cell">
+                <img  src="/images/home/eraser.png" v-on:click="seenBlackOverlay = true; seenBoxConfirm = true; graphID = graph._id">
             </div>
         </div>
 
     </div>
 
 
-        <div v-if="seen" v-bind:style="styleObject" id="black_overlay" style="width: 100%;"> </div>
-        <div v-if="seen" v-bind:style="styleObject" class="added" style="display: block;">
-            <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seen = false">
+        <div v-if="seenBlackOverlay" v-bind:style="styleObject" id="black_overlay" style="width: 100%;"> </div>
+
+        <div v-if="seenBoxNewGraph" v-bind:style="styleObject" class="added" style="display: block;">
+            <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seenBoxNewGraph = false; seenBlackOverlay = false">
             <h3>New graph</h3>
             <input type="text" v-model="name" placeholder="Graph name">
             <button v-on:click="insertGraph">Create</button>
         </div>
-    </div>
 
+        <div v-if="seenBoxConfirm" v-bind:style="styleObject" class="added" style="display: block;">
+            <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seenBoxConfirm = false;seenBlackOverlay = false">
+            <h3>Are you sure ?</h3>
+            <button v-on:click="deleteGraph(graphID);">Yes</button>
+            <button v-on:click="seenBoxConfirm = false;seenBlackOverlay = false">No</button>
+        </div>
+
+        <div v-if="seenBoxAccess" v-bind:style="styleObject" class="added boxAccess" style="display: block;">
+            <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seenBoxAccess = false;seenBlackOverlay = false">
+            <div class="currentAccess">
+                <h3>Current access permission : </h3>
+                <div class="row header red ">
+                    <div class="cell">
+                        Mail
+                    </div>
+                    <div class="cell">
+                        Read
+                    </div>
+                    <div class="cell">
+                        Write
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="cell">
+                        {{owner}}<b> (Owner)</b>
+                    </div>
+                    <div class="cell">
+                        Yes
+                    </div>
+                    <div class="cell">
+                        Yes
+                    </div>
+                </div>
+                <div class="row"  v-for="(user,index) in read">
+                    <div class="cell">
+                        {{user.mail}}
+                    </div>
+                    <div class="cell">
+                        Yes
+                    </div>
+                    <div class="cell">
+                        No
+                    </div>
+                </div>
+                <div class="row"  v-for="(user,index) in write">
+                    <div class="cell">
+                        {{user.mail}}
+                    </div>
+                    <div class="cell">
+                        Yes
+                    </div>
+                    <div class="cell">
+                        Yes
+                    </div>
+                </div>
+            </div>
+            <h3>Add access permission : </h3>
+            <input type="text" v-model="mail" placeholder="Address mail">
+            <button v-on:click="addAccess">Add access</button>
+        </div>
+    </div>
     <script src="/js/home.js"></script>
 
 
