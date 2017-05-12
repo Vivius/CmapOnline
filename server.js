@@ -4,7 +4,8 @@ var Mongo = require("mongodb").MongoClient;
 var ObjectId = require("mongodb").ObjectID;
 var Session = require('express-session');
 var MongoStore = require('connect-mongo')(Session);
-var Bcrypt = require("bcrypt-nodejs");
+var Bcrypt = require('bcrypt-nodejs');
+var favicon = require('serve-favicon');
 
 var DB = "mongodb://localhost/cmap";
 
@@ -25,6 +26,7 @@ app.use("/js",Express.static(__dirname + '/js'));
 app.use("/html",Express.static(__dirname + '/html'));
 app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({ extended: true }));
+app.use(favicon(__dirname + '/images/favicon/favicon.ico'));
 
 // Initialisation de la session.
 app.use(Session({
@@ -100,6 +102,29 @@ app.post("/signup", function (req,res) {
             }
         });
     });
+});
+
+/**
+ * Récupérer l'utilisateur courant
+ */
+app.get('/user/current' , function(req, res) {
+    res.json(req.session.user);
+});
+
+/**
+ * Retourne les access du graph
+ */
+app.post("/graph/getAccess", function (req, res) {
+
+    Mongo.connect(DB, function(error, db) {
+        var query = {_id: new ObjectId(req.body['_id'])};
+        var projection = {read:1, write:1, owner:1, _id:0};
+        var cursor = db.collection('graphs').find(query).project(projection);
+        cursor.toArray(function(err, documents) {
+            res.json(documents);
+            console.log(documents);
+        });
+    })
 });
 
 /**
