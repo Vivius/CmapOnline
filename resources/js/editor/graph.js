@@ -511,6 +511,20 @@ function addLink(fromNodeID, toNodeID, newID, label, type) {
 }
 
 /**
+ * Permet de touver si un lien existe entre 2 noeuds donnés.
+ * @param nodeSource int
+ * @param nodeTarget int
+ */
+function findLink(nodeSource, nodeTarget) {
+    var link = null;
+    $.each(dataset.links, function (k, l) {
+        if(l.source._id == nodeSource && l.target._id == nodeTarget)
+            link = l;
+    });
+    return link;
+}
+
+/**
  * Modifie le label d'un lien du graphe.
  * @param id int
  * @param newLabel String
@@ -601,6 +615,7 @@ export {
     unselectNode,
 
     addLink,
+    findLink,
     editLinkLabel,
     removeLink,
     getD3LinkById,

@@ -129,9 +129,11 @@ function editNode() {
  * Fonction appelée quand on supprime un noeud.
  */
 function removeNode() {
-    Networker.removeNode(Graph.getDataNodeById(Graph.selectedNode));
-    Graph.removeNode(Graph.selectedNode);
+    var nodeToRemove = Graph.selectedNode;
+    if(nodeToRemove == -1) return;
     Graph.unselectNode();
+    Networker.removeNode(Graph.getDataNodeById(nodeToRemove));
+    Graph.removeNode(nodeToRemove);
     updateMenu();
 }
 
@@ -170,7 +172,9 @@ function createLinkManager(linkEditionStatus, node) {
             linkEditionStatus.target = node;
             var source = Graph.getDataNodeById(linkEditionStatus.source);
             var target = Graph.getDataNodeById(linkEditionStatus.target);
-            if(canCreateLink(source, target, linkEditionStatus.type)) {
+            if(canCreateLink(source, target, linkEditionStatus.type) &&
+                Graph.findLink(source._id, target._id) == null &&
+                source._id != target._id) {
                 Networker.addLink({
                     source: linkEditionStatus.source,
                     target: linkEditionStatus.target,
@@ -190,7 +194,7 @@ function createLinkManager(linkEditionStatus, node) {
                     updateMenu();
                 });
             } else {
-                alert("Contrainte de liaison. Impossible de créer cette relation entre ces types de cartes.");
+                alert("Imposssible to create this link. Nodes types are not compatibles or a link already exists.");
             }
             resetLinkEdition();
         }
@@ -243,9 +247,11 @@ function changeLinkType() {
  * Fonction appelée quand on veut supprimer un lien.
  */
 function removeLink() {
-    Networker.removeLink(Graph.getDataLinkById(Graph.selectedLink));
-    Graph.removeLink(Graph.selectedLink);
+    var linkToDelete = Graph.selectedLink;
+    if(linkToDelete == -1) return;
     Graph.unselectLink();
+    Networker.removeLink(Graph.getDataLinkById(linkToDelete));
+    Graph.removeLink(linkToDelete);
     updateMenu();
 }
 
@@ -314,7 +320,7 @@ $(window).keyup(function (e) {
  ******************************************************************/
 
 /**
- * Détermine les contraintes de liaison entre un lien et 2 noeuds.
+ * Détermine les contraintes de liaison entre un lien et 2 noeuds au niveau de leur type.
  * Retourne true si la création est possible, false sinon.
  * @param nodeSource object
  * @param nodeTarget object
