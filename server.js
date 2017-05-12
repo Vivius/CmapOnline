@@ -97,9 +97,8 @@ app.get('/user/current' , function(req, res) {
  * Retourne les access du graphs
  */
 app.post("/graph/getAccess", function (req, res) {
-
-    mongo.connect(DB, function(error, db) {
-        var query = {_id: new objectID(req.body['_id'])};
+    Mongo.connect(DB, function(error, db) {
+        var query = {_id: new ObjectId(req.body['_id'])};
         var projection = {read:1, write:1, owner:1, _id:0};
         var cursor = db.collection('graphs').find(query).project(projection);
         cursor.toArray(function(err, documents) {
