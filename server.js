@@ -1,15 +1,15 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var mongo = require("mongodb").MongoClient;
-var objectID = require("mongodb").ObjectID;
-var session = require('express-session');
-var mongoStore = require('connect-mongo')(session);
-var bcrypt = require("bcrypt-nodejs");
+var Express = require('express');
+var BodyParser = require('body-parser');
+var Mongo = require("mongodb").MongoClient;
+var ObjectId = require("mongodb").ObjectID;
+var Session = require('express-session');
+var MongoStore = require('connect-mongo')(Session);
+var Bcrypt = require("bcrypt-nodejs");
 
 var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
-mongo.connect(DB, function(error, db) {
+Mongo.connect(DB, function(error, db) {
     if(error) {
         console.log("ERREUR - Impossible de se conencter à MongoDB");
         throw error;
@@ -18,21 +18,21 @@ mongo.connect(DB, function(error, db) {
 });
 
 // Configuration du framework express.
-var app = express();
-app.use("/css",express.static(__dirname + '/css'));
-app.use("/images",express.static(__dirname + '/images'));
-app.use("/js",express.static(__dirname + '/js'));
-app.use("/html",express.static(__dirname + '/html'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+var app = Express();
+app.use("/css",Express.static(__dirname + '/css'));
+app.use("/images",Express.static(__dirname + '/images'));
+app.use("/js",Express.static(__dirname + '/js'));
+app.use("/html",Express.static(__dirname + '/html'));
+app.use(BodyParser.json());
+app.use(BodyParser.urlencoded({ extended: true }));
 
 // Initialisation de la session.
-app.use(session({
+app.use(Session({
     secret: 'moijecomprendspasacounamatata',
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false },
-    store: new mongoStore({ url: DB})
+    store: new MongoStore({ url: DB})
 }));
 
 //------------------------------------------------------------
@@ -55,9 +55,9 @@ app.get('/', function (req, res) {
  * Recherche un utilisateur en base
  */
 app.post("/login", function (req,res) {
-    mongo.connect(DB, function (error, db) {
+    Mongo.connect(DB, function (error, db) {
         db.collection("users").find({mail: req.body.mail}).toArray(function(err, documents) {
-            if(documents[0] != null && bcrypt.compareSync(req.body.password, documents[0].password)) {
+            if(documents[0] != null && Bcrypt.compareSync(req.body.password, documents[0].password)) {
                 req.session.user = documents[0];
                 res.json(true);
             } else
@@ -70,12 +70,12 @@ app.post("/login", function (req,res) {
  * Insertion d'un utilisateur
  */
 app.post("/signup", function (req,res) {
-    mongo.connect(DB, function (error, db){
+    Mongo.connect(DB, function (error, db){
         db.collection("users").find({mail: req.body.mail}).toArray(function(err, documents) {
             if(typeof documents[0] != 'undefined') res.json(false);
             else {
-                var salt = bcrypt.genSaltSync(10);
-                var hash = bcrypt.hashSync(req.body.password, salt);
+                var salt = Bcrypt.genSaltSync(10);
+                var hash = Bcrypt.hashSync(req.body.password, salt);
                 req.body.password = hash;
                 db.collection("users").insert(req.body, null, function (err, results) {
                     req.session.user = results.ops[0];
@@ -115,7 +115,7 @@ app.get("/graph/get/:id", function (req, res) {
  * Retourne la liste de tous les graphes.
  */
 app.get("/graph/getAll", function (req, res) {
-    mongo.connect(DB, function(error, db) {
+    Mongo.connect(DB, function(error, db) {
         db.collection("graphs").find().toArray(function(err, documents) {
             res.json(documents);
         });
@@ -127,7 +127,7 @@ app.get("/graph/getAll", function (req, res) {
  */
 app.post("/graph/create", function (req,res) {
     req.body["date"] =  Date.now();
-    mongo.connect(DB, function(error, db) {
+    Mongo.connect(DB, function(error, db) {
         db.collection("graphs").insert(req.body, null, function (error, results) {
             res.json(results.ops[0]);
         });
@@ -138,9 +138,9 @@ app.post("/graph/create", function (req,res) {
  * Supprimer un graphe grâce à son id
  */
 app.post("/graph/deleteOne", function (req,res) {
-    mongo.connect(DB, function (error, db) {
+    Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
-            graphs.remove({_id: new objectID(req.body['_id'])}, function (err, result) {
+            graphs.remove({_id: new ObjectId(req.body['_id'])}, function (err, result) {
                 res.end();
             });
         });
@@ -165,7 +165,7 @@ var io = require('socket.io')(http);
 io.on('connection', function(socket) {
     // Ajout d'un nouveau noeud.
     socket.on("node/add", function (node, fn) {
-        mongo.connect(DB, function(error, db) {
+        Mongo.connect(DB, function(error, db) {
             db.collection("nodes").insert(node, function (error, results) {
                 fn(results.ops[0]);
                 io.emit("node/added", results.ops[0]);
@@ -175,8 +175,8 @@ io.on('connection', function(socket) {
     });
     // Met à jour un noeud
     socket.on("node/update", function (node, fn) {
-        mongo.connect(DB, function (error, db) {
-            db.collection('nodes').update({_id: new objectID(node._id)},
+        Mongo.connect(DB, function (error, db) {
+            db.collection('nodes').update({_id: new ObjectId(node._id)},
                 {$set: {name: node.name, type: node.type, comment: node.comment, x: node.x, y: node.y, fixed: node.fixed}},
                 function (error, results) {
                     io.emit("node/updated", node);
@@ -186,7 +186,7 @@ io.on('connection', function(socket) {
     });
     // Suppression d'un noeud
     socket.on("node/remove", function (node, fn) {
-        mongo.connect(DB, function (error, db) {
+        Mongo.connect(DB, function (error, db) {
             db.collection('nodes').remove(node, function (error, results) {
                 io.emit("node/removed", node);
                 console.log("NODE " + node._id + " REMOVED");
@@ -195,7 +195,7 @@ io.on('connection', function(socket) {
     });
     // Ajout d'un lien.
     socket.on("link/add", function (link, fn) {
-        mongo.connect(DB, function(error, db) {
+        Mongo.connect(DB, function(error, db) {
             db.collection("links").insert(link, function (error, results) {
                 fn(results.ops[0]);
                 io.emit("link/added", results.ops[0]);
@@ -205,7 +205,7 @@ io.on('connection', function(socket) {
     });
     // Suppression d'un lien
     socket.on("link/remove", function (link, fn) {
-        mongo.connect(DB, function (error, db) {
+        Mongo.connect(DB, function (error, db) {
             db.collection('links').remove(link, function (error, results) {
                 io.emit("link/removed", link);
                 console.log("LINK " + link._id + " REMOVED");
