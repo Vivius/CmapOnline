@@ -35,6 +35,14 @@ app.use(Session({
     store: new MongoStore({ url: DB})
 }));
 
+// Middleware authentification
+app.use(function (req, res, next) {
+    if(!req.session.user && req.path !== "/" && req.path !== "/login" && req.path !== "/signup") {
+        return res.redirect('/');
+    }
+    next();
+});
+
 //------------------------------------------------------------
 // HELPERSS
 //------------------------------------------------------------
@@ -52,7 +60,7 @@ app.get('/', function (req, res) {
 });
 
 /**
- * Recherche un utilisateur en base
+ * Login
  */
 app.post("/login", function (req,res) {
     Mongo.connect(DB, function (error, db) {
@@ -64,6 +72,14 @@ app.post("/login", function (req,res) {
                 res.json(false);
         });
     });
+});
+
+/**
+ * Logout
+ */
+app.post("/logout", function (req,res) {
+    req.session.user.destroy();
+    res.redirect('/');
 });
 
 /**
@@ -214,4 +230,4 @@ io.on('connection', function(socket) {
     });
 });
 
-http.listen(8080);
+http.listen(8181);
