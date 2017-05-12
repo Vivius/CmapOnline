@@ -3,8 +3,10 @@ var bodyParser = require('body-parser');
 var mongo = require("mongodb").MongoClient;
 var objectID = require("mongodb").ObjectID;
 var session = require('express-session');
-var DB = "mongodb://localhost/cmap";
+var mongoStore = require('connect-mongo')(session);
 var bcrypt = require("bcrypt-nodejs");
+
+var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
 mongo.connect(DB, function(error, db) {
@@ -23,6 +25,15 @@ app.use("/js",express.static(__dirname + '/js'));
 app.use("/html",express.static(__dirname + '/html'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Initialisation de la session.
+app.use(session({
+    secret: 'moijecomprendspasacounamatata',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false },
+    store: new mongoStore({ url: DB})
+}));
 
 //------------------------------------------------------------
 // HELPERSS
@@ -47,6 +58,7 @@ app.post("/login", function (req,res) {
     mongo.connect(DB, function (error, db) {
         db.collection("users").find({mail: req.body.mail}).toArray(function(err, documents) {
             if(documents[0] != null && bcrypt.compareSync(req.body.password, documents[0].password)) {
+                req.session.user = documents[0];
                 res.json(true);
             } else
                 res.json(false);
@@ -65,7 +77,10 @@ app.post("/signup", function (req,res) {
                 var salt = bcrypt.genSaltSync(10);
                 var hash = bcrypt.hashSync(req.body.password, salt);
                 req.body.password = hash;
-                db.collection("users").insert(req.body, null, res.json(true));
+                db.collection("users").insert(req.body, null, function (err, results) {
+                    req.session.user = results.ops[0];
+                    res.json(true);
+                });
             }
         });
     });
