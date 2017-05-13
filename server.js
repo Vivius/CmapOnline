@@ -104,7 +104,6 @@ app.post("/graph/getAccess", function (req, res) {
         var cursor = db.collection('graphs').find(query).project(projection);
         cursor.toArray(function(err, documents) {
             res.json(documents);
-            console.log(documents);
         });
     })
 });
@@ -143,7 +142,9 @@ app.get("/graph/getAll", function (req, res) {
     return Mongo.connect(DB).then(function(db) {
 
         var graphs = new Promise(function(resolve){
-            resolve(db.collection("graphs").find().toArray());
+            var usr = req.session.user;
+            var query = {$or: [{owner: usr._id}, {read:{id: usr._id}}, {write:{id: usr._id}}] };
+            resolve(db.collection("graphs").find(query).toArray());
         });
 
         var users = new Promise(function(resolve){
@@ -178,13 +179,37 @@ app.post("/graph/create", function (req,res) {
     })
 });
 
+
+/**
+ * Permet de créer un nouveau graphe.
+ */
+app.post("/graph/addAccess", function (req,res) {
+    Mongo.connect(DB, function (error, db) {
+        db.collection('graphs', {}, function (err, graphs) {
+            console.log(req.body);
+            var query = {_id: new ObjectId(req.body['graphID'])} ;
+
+            if(req.body['access'] == 'read'){
+                graphs.update(query,{$push: { "read":{ "id": req.body['userID']} } });
+                res.end();
+            }
+            else{
+                graphs.update(query,{$push: { "write":{ "id": req.body['userID']} } });
+                res.end();
+            }
+        });
+    })
+});
+
 /**
  * Supprimer un graphe grâce à son id
  */
 app.post("/graph/deleteOne", function (req,res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
-            graphs.remove({_id: new ObjectId(req.body['_id'])}, function (err, result) {
+            var usr = req.session.user;
+            var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}] };
+            graphs.remove(query, function (err, result) {
                 res.end();
             });
         });

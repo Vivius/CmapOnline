@@ -9,8 +9,9 @@ Vue.use(VueResource);
 var app = new Vue({
     el: '#app',
     data: {
+        picked:'read',
         name: '',
-        mail: '',
+        userID: '',
         seenBoxAccess: false,
         seenBlackOverlay: false,
         seenBoxNewGraph: false,
@@ -25,17 +26,14 @@ var app = new Vue({
         graphID: 0,
     },
     created:function() {
-        this.getAllGraphs();
         this.getCurrentUser();
-        this.owner = this.currentUser.mail;
-        console.log( this.owner);
-
+        this.getAllGraphs();
     },
     methods: {
         insertGraph: function () {
             this.seenBoxNewGraph = false;
             this.seenBlackOverlay = false;
-            this.$http.post('/graph/create', {name: this.name, read: [{id : this.currentUser._id}], write: [{id:this.currentUser._id}], owner: this.currentUser._id}).then(response => {
+            this.$http.post('/graph/create', {name: this.name, read: [], write: [], owner: this.currentUser._id}).then(response => {
                 this.getAllGraphs();
             }, response => {
             });
@@ -55,8 +53,10 @@ var app = new Vue({
         },
         getAccess: function(id){
             this.$http.post('/graph/getAccess',{_id: id}).then(response => {
+                console.log(response.body);
                 this.read = response.body[0]['read'];
                 this.write = response.body[0]['write'];
+                this.graphID = id;
             }, response => {
             });
         },
@@ -69,7 +69,30 @@ var app = new Vue({
             });
         },
         addAccess: function () {
+            this.$http.post('/graph/addAccess',{graphID: this.graphID, userID: this.userID,access: this.picked}).then(response => {
+                this.getAccess(this.graphID);
+            }, response => {
+            });
 
+        },
+        canView: function(read){
+            for (var i = 0; i < read.length; i++) {
+                if(read[i]['id'] == this.currentUser._id)
+                    return true;
+                else
+                    return false;
+            }
+        },
+        canEdit: function(write){
+            for (var i = 0; i < write.length; i++) {
+                if(write[i]['id'] == this.currentUser._id)
+                    return true;
+                else
+                    return false;
+            }
+        },
+        isOwner: function(id){
+            return id == this.currentUser._id;
         },
         getCurrentUser: function () {
             this.$http.get('/user/current').then(response => {

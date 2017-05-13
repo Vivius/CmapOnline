@@ -54,20 +54,20 @@
                 <div class="cell">
                     {{ graph.owner.firstname }} {{ graph.owner.lastname  }}
                 </div>
-                <div align='right' class="cell"  v-on:click="seenBlackOverlay = true; seenBoxAccess = true; getAccess(graph._id)">
-                    <img src="/images/home/door-key.png">
+                <div align='right' class="cell"  v-on:click="seenBlackOverlay = true; seenBoxAccess = true; getAccess(graph._id); graphID = graph._id">
+                    <img src="/images/home/door-key.png" v-if="isOwner(graph.owner._id)">
                 </div>
                 <div align='right' class="cell">
                     <img src="/images/home/export.png">
                 </div>
                 <div align='right' class="cell">
-                    <img src="/images/home/eye.png" v-on:click="redirectToViewer(graph._id)">
+                    <img src="/images/home/eye.png" v-if="canView(graph.read) || canEdit(graph.write) || isOwner(graph.owner._id) " v-on:click="redirectToViewer(graph._id)">
                 </div>
                 <div align='right' class="cell">
-                    <img src="/images/home/edit.png" v-on:click="redirectToEditor(graph._id)">
+                    <img src="/images/home/edit.png" v-if="canEdit(graph.write) || isOwner(graph.owner._id)" v-on:click="redirectToEditor(graph._id)">
                 </div>
                 <div align='right' class="cell">
-                    <img  src="/images/home/eraser.png" v-on:click="seenBlackOverlay = true; seenBoxConfirm = true; graphID = graph._id">
+                    <img  src="/images/home/eraser.png" v-if="isOwner(graph.owner._id)" v-on:click="seenBlackOverlay = true; seenBoxConfirm = true; graphID = graph._id">
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
                     </div>
                     <div class="cell">
                         <form action="">
-                            <input type="radio" name="access" value="read"> Read
+                            <input type="radio" name="access" value="read" checked> Read
                             <input type="radio" name="access" value="write"> Write
                         </form>
                     </div>
@@ -127,19 +127,19 @@
                     <div class="cell">
                         <form action="">
                                 <input type="radio" name="access" value="read"> Read
-                                <input type="radio" name="access" value="write"> Write
+                                <input type="radio" name="access" value="write" checked> Write
                         </form>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="cell addcell">
-                        <input type="text" class="addAccesInput" v-model="mail" placeholder="Add one more person">
+                        <input type="text" class="addAccesInput" v-model="userID" placeholder="Add one more person">
                     </div>
                     <div class="cell">
                         <form action="">
-                            <input type="radio" name="access" value="read"> Read
-                            <input type="radio" name="access" value="write"> Write
+                            <input type="radio" name="access" value="read" v-model="picked"> Read
+                            <input type="radio" name="access" value="write" v-model="picked"> Write
                         </form>
                     </div>
                 </div>
