@@ -175,6 +175,64 @@ app.get("/graph/get/:id", function (req, res) {
 
 
 /**
+ * Parse un graphe au format voulu pour l'export
+ */
+app.get("/graph/parse/:id", function (req, res) {
+    var id = req.params["id"];
+    Mongo.connect(DB, function (error, db) {
+        db.collection("nodes").find({graph_id: id}).toArray(function (err, nodes) {
+            db.collection("links").find({graph_id: id}).toArray(function (err, links) {
+                db.collection("graphs").find({_id: new ObjectId(id)}).toArray(function (err, graph) {
+                    // Format désiré du graphe pour l'export
+                    var format = {
+                        graph: {
+                            name: graph[0].name,
+                            description: "",
+                            directed: true,
+                            metadata: [
+
+                            ],
+                            nodes: nodes,
+                            links: links
+                        }
+                    };
+
+                    // Suppression des données inutiles dans les nodes
+                    format.graph.nodes.forEach(function (node) {
+                        node.id = node._id;
+                        node.label = node.name;
+
+                        if(node.type == "object") node.type = "instance";
+
+                        delete node._id;
+                        delete node.name;
+                        delete node.comment;
+                        delete node.fixed;
+                        delete node.graph_id;
+                        delete node.x;
+                        delete node.y;
+                    })
+
+                    // Suppression des données inutiles dans les links
+                    format.graph.links.forEach(function (link) {
+                        if(link.type == "ako") link.type = "subconcept-of";
+                        if(link.type == "instance of") {
+                            link.type = "instance-of";
+                            link.label = "io";
+                        }
+
+                        delete link._id;
+                        delete link.graph_id;
+                    })
+
+                    res.json(format);
+                });
+            });
+        });
+    });
+});
+
+/**
  * Retourne la liste de tous les graphes.  {_id: new ObjectId(graph['owner'])}
  */
 app.get("/graph/getAll", function (req, res) {
@@ -296,4 +354,4 @@ io.on('connection', function(socket) {
     });
 });
 
-http.listen(8080);
+http.listen(8181);

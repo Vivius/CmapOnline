@@ -6,7 +6,7 @@ import * as Graph from "./graph";
 import * as Controller from "./controller";
 import * as Editor from "./editor";
 
-var serverUrl = "http://localhost:8080";
+var serverUrl = "http://localhost:8181";
 var socket = require('socket.io-client')(serverUrl);
 
 /******************************************************************
