@@ -158,16 +158,36 @@ app.get("/graph/get/:id", function (req, res) {
     });
 });
 
+
 /**
- * Retourne la liste de tous les graphes.
+ * Retourne la liste de tous les graphes.  {_id: new ObjectId(graph['owner'])}
  */
 app.get("/graph/getAll", function (req, res) {
-    Mongo.connect(DB, function(error, db) {
-        db.collection("graphs").find().toArray(function(err, documents) {
-            res.json(documents);
+    return Mongo.connect(DB).then(function(db) {
+
+        var graphs = new Promise(function(resolve){
+            resolve(db.collection("graphs").find().toArray());
         });
-    })
+
+        var users = new Promise(function(resolve){
+            resolve(db.collection("users").find().toArray());
+        });
+
+        Promise.all([graphs, users]).then(function(data)  {
+            graphs = data[0];
+            users = data[1];
+            for (var i = 0; i < graphs.length; i++) {
+                for (var j = 0; j < users.length; j++) {
+                    if(graphs[i]['owner'] ==  users [j]['_id']){
+                        graphs[i]['owner'] = users [j];
+                    }
+                }
+            }
+            res.json(graphs);
+        });
+    });
 });
+
 
 /**
  * Permet de créer un nouveau graphe.

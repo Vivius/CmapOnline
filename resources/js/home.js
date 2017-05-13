@@ -35,7 +35,7 @@ var app = new Vue({
         insertGraph: function () {
             this.seenBoxNewGraph = false;
             this.seenBlackOverlay = false;
-            this.$http.post('/graph/create', {name: this.name, read: [{mail : 'ludoletroubadoure@gmail.com'}], write: [{mail:'vivus@troll.com'}], owner: this.currentUser.mail}).then(response => {
+            this.$http.post('/graph/create', {name: this.name, read: [{id : this.currentUser._id}], write: [{id:this.currentUser._id}], owner: this.currentUser._id}).then(response => {
                 this.getAllGraphs();
             }, response => {
             });
