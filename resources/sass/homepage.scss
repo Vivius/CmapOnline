@@ -57,7 +57,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-smoothing: antialiased;
   background: white;
-  min-width: 580px;
+  min-width: 900px;
 }
 
 .wrapper {
@@ -73,7 +73,7 @@ body {
   display: table;
   table-layout: fixed;
 }
-@media screen and (max-width: 580px) {
+@media screen and (max-width: 900px) {
   .table {
     display: block;
   }
@@ -97,7 +97,7 @@ body {
 .row.blue {
   background: #2980b9;
 }
-@media screen and (max-width: 580px) {
+@media screen and (max-width: 900px) {
   .row {
     padding: 8px 0;
   }
@@ -108,7 +108,7 @@ body {
   display: table-cell;
   vertical-align: middle;
 }
-@media screen and (max-width: 580px) {
+@media screen and (max-width: 900px) {
   .cell {
     padding: 2px 12px;
   }

@@ -115,14 +115,50 @@ app.get('/user/current' , function(req, res) {
  * Retourne les access du graph
  */
 app.post("/graph/getAccess", function (req, res) {
-    Mongo.connect(DB, function(error, db) {
-        var query = {_id: new ObjectId(req.body['_id'])};
-        var projection = {read:1, write:1, owner:1, _id:0};
-        var cursor = db.collection('graphs').find(query).project(projection);
-        cursor.toArray(function(err, documents) {
-            res.json(documents);
+
+    Mongo.connect(DB).then(function(db) {
+
+        var graphs = new Promise(function(resolve){
+            var usr = req.session.user;
+            var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}]};
+            var projection = {read:1, write:1, _id:0};
+            var cursor = db.collection('graphs').find(query).project(projection);
+            cursor.toArray(function(err, documents) {
+                resolve(documents);
+            });
         });
-    })
+
+        var users = new Promise(function(resolve){
+            resolve(db.collection("users").find().toArray());
+        });
+
+        Promise.all([graphs, users]).then(function(data)  {
+
+            graphs = data[0][0];
+            users = data[1];
+
+            if(typeof graphs['read'] !== 'undefined') {
+                for (var i = 0; i < graphs['read'].length; i++) {
+                    for (var j = 0; j < users.length; j++) {
+                        if(graphs['read'][i]['id'] ==  users [j]['_id']){
+                            graphs['read'][i] = users [j];
+                        }
+                    }
+                }
+            }
+            if(typeof graphs['write'] !== 'undefined') {
+                for (i = 0; i < graphs['write'].length; i++) {
+                    for (j = 0; j < users.length; j++) {
+                        if (graphs['write'][i]['id'] == users [j]['_id']) {
+                            graphs['write'][i] = users [j];
+                        }
+                    }
+                }
+            }
+            res.json(graphs);
+
+        });
+    });
 });
 
 
@@ -170,7 +206,7 @@ app.get("/graph/get/:id", function (req, res) {
  * Retourne la liste de tous les graphes.
  */
 app.get("/graph/getAll", function (req, res) {
-    return Mongo.connect(DB).then(function(db) {
+    Mongo.connect(DB).then(function(db) {
 
         var graphs = new Promise(function(resolve){
             var usr = req.session.user;
@@ -237,14 +273,15 @@ app.post("/graph/addAccess", function (req,res) {
 app.post("/graph/deleteAccess", function (req,res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
-            var query = {_id: new ObjectId(req.body['graphID'])};
+            var usr = req.session.user;
+            var query ={$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}] };
 
             if(req.body['typeAccess'] == 'read') {
-                graphs.update(query, {$unset: {read: {id: req.body['userID']}}});
+                graphs.update(query, {$pull: {read: {id: req.body['userID']}}});
                 res.end();
             }
             else{
-                graphs.update(query, {$unset: {write: {id: req.body['userID']}}});
+                graphs.update(query, {$pull: {write: {id: req.body['userID']}}});
                 res.end();
             }
         });

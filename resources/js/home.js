@@ -21,8 +21,8 @@ var app = new Vue({
         },
         currentUser:[],
         graphs:[],
-        read:[{id: ''}],
-        write:[{id: ''}],
+        read:[],
+        write:[],
         graphID: 0,
     },
     created:function() {
@@ -53,9 +53,8 @@ var app = new Vue({
         },
         getAccess: function(id){
             this.$http.post('/graph/getAccess',{_id: id}).then(response => {
-                console.log(response.body);
-                this.read = response.body[0]['read'];
-                this.write = response.body[0]['write'];
+                this.read = response.body['read'];
+                this.write = response.body['write'];
                 this.graphID = id;
             }, response => {
             });
@@ -78,6 +77,7 @@ var app = new Vue({
 
         },
         deleteAccess: function (userID,typeAccess) {
+            console.log(this.graphID);
             this.$http.post('/graph/deleteAccess',{graphID: this.graphID, userID: userID, typeAccess: typeAccess}).then(response => {
                 this.getAccess(this.graphID);
             }, response => {

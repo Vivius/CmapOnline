@@ -101,23 +101,23 @@
                         Access
                     </div>
                     <div class="cell">
-                        Delete
+                        Add / Delete
                     </div>
                 </div>
                 <div class="row">
                     <div class="cell">
-                        {{currentUser.mail}}<b> (Owner)</b>
+                        {{currentUser.firstname}} {{currentUser.lastname}} ({{currentUser.mail}})
                     </div>
                     <div class="cell">
-
+                        <b>Owner</b>
                     </div>
                     <div class="cell">
-
+                        -
                     </div>
                 </div>
                 <div class="row"  v-for="(user,index) in read">
                     <div class="cell">
-                        {{user.id}}
+                        {{user.firstname}} {{user.lastname}} ({{user.mail}})
                     </div>
                     <div class="cell">
                         <form action="">
@@ -126,13 +126,13 @@
                         </form>
                     </div>
                     <div class="cell">
-                        <img src="/images/home/delete.png" v-on:click="deleteAccess(user.id, 'read')">
+                        <img src="/images/home/delete.png" v-on:click="deleteAccess(user._id, 'read')">
                     </div>
                 </div>
 
                 <div class="row"  v-for="(user,index) in write">
                     <div class="cell">
-                        {{user.id}}
+                        {{user.firstname}} {{user.lastname}} ({{user.mail}})
                     </div>
                     <div class="cell">
                         <form action="">
@@ -141,7 +141,7 @@
                         </form>
                     </div>
                     <div class="cell">
-                        <img src="/images/home/delete.png" v-on:click="deleteAccess(user.id, 'write')">
+                        <img src="/images/home/delete.png" v-on:click="deleteAccess(user._id, 'write')">
                     </div>
                 </div>
 
@@ -156,12 +156,11 @@
                         </form>
                     </div>
                     <div class="cell">
-
+                        <img src="/images/home/plus.png" v-on:click="addAccess">
                     </div>
                 </div>
             </div>
 
-            <button v-on:click="addAccess">Add access</button>
         </div>
     </div>
     <script src="/js/home.js"></script>
