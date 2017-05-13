@@ -7,7 +7,7 @@ var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require('bcrypt-nodejs');
 var favicon = require('serve-favicon');
 
-var DB = "mongodb://localhost/cmap";
+var DB = "mongodb://localhost/CmapDb";
 
 // Test de onnection à MongoDB.
 Mongo.connect(DB, function(error, db) {

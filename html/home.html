@@ -54,8 +54,8 @@
                 <div class="cell">
                     {{ graph.owner.firstname }} {{ graph.owner.lastname  }}
                 </div>
-                <div align='right' class="cell"  v-on:click="seenBlackOverlay = true; seenBoxAccess = true; getAccess(graph._id); graphID = graph._id">
-                    <img src="/images/home/door-key.png" v-if="isOwner(graph.owner._id)">
+                <div align='right' class="cell"  >
+                    <img src="/images/home/door-key.png" v-if="isOwner(graph.owner._id)" v-on:click="seenBlackOverlay = true; seenBoxAccess = true; getAccess(graph._id); graphID = graph._id">
                 </div>
                 <div align='right' class="cell">
                     <a :download="graph.name + '.json'" :href="'/graph/get/' + graph._id"><img src="/images/home/export.png"></a>
