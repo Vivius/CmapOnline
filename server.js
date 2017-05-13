@@ -253,14 +253,45 @@ app.post("/graph/create", function (req,res) {
 app.post("/graph/addAccess", function (req,res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
-            var query = {_id: new ObjectId(req.body['graphID'])} ;
+            var query = {$and : [
+                                    {_id: new ObjectId(req.body['graphID'])},
+                                    { $nor: [
+                                        {read : { id: req.body['userID']}},
+                                        {write : { id: req.body['userID'] } }
+                                        ]
+                                    }
+                                ]
+                        } ;
 
             if(req.body['access'] == 'read'){
-                graphs.update(query,{$push: { read:{ id: req.body['userID']} } });
+                graphs.update(query,{$push: { read:{ id: req.body['userID']} } }, { upsert: true });
                 res.end();
             }
             else{
-                graphs.update(query,{$push: { write:{ id: req.body['userID']} } });
+                graphs.update(query,{$push: { write:{ id: req.body['userID']} } }, { upsert: true });
+                res.end();
+            }
+        });
+    })
+});
+
+/**
+ * Permet de changer un acces d'écriture en lecture ou de lecture en écriture
+ */
+app.post("/graph/changeAccess", function (req,res) {
+    Mongo.connect(DB, function (error, db) {
+        db.collection('graphs', {}, function (err, graphs) {
+            var usr = req.session.user;
+            var query ={$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}] };
+
+            if(req.body['typeAccess'] == 'read') {
+                graphs.update(query, {$pull: {write: {id: req.body['userID']}}});
+                graphs.update(query, {$push: {read:  {id: req.body['userID']}}});
+                res.end();
+            }
+            else{
+                graphs.update(query, {$pull: {read: {id: req.body['userID']}}});
+                graphs.update(query, {$push: {write:{id: req.body['userID']}}});
                 res.end();
             }
         });

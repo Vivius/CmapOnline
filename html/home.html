@@ -121,8 +121,8 @@
                     </div>
                     <div class="cell">
                         <form action="">
-                            <input type="radio" name="access" value="read" checked> Read
-                            <input type="radio" name="access" value="write"> Write
+                            <input type="radio" name="access" value="read"  checked> Read
+                            <input type="radio" name="access" value="write" v-on:click="changeAccess(user._id, 'write')"> Write
                         </form>
                     </div>
                     <div class="cell">
@@ -136,7 +136,7 @@
                     </div>
                     <div class="cell">
                         <form action="">
-                                <input type="radio" name="access" value="read"> Read
+                                <input type="radio" name="access" value="read" v-on:click="changeAccess(user._id, 'read')"> Read
                                 <input type="radio" name="access" value="write" checked> Write
                         </form>
                     </div>

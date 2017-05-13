@@ -76,6 +76,11 @@ var app = new Vue({
             });
 
         },
+        changeAccess: function(userID,typeAccess){
+            this.$http.post('/graph/changeAccess',{graphID: this.graphID, userID: userID, typeAccess: typeAccess}).then(response => {
+            }, response => {
+            });
+        },
         deleteAccess: function (userID,typeAccess) {
             console.log(this.graphID);
             this.$http.post('/graph/deleteAccess',{graphID: this.graphID, userID: userID, typeAccess: typeAccess}).then(response => {
