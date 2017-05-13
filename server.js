@@ -33,7 +33,10 @@ app.use(Session({
     secret: 'moijecomprendspasacounamatata',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false },
+    cookie: {
+        secure: false,
+        maxAge: new Date(Date.now() + (24 * 60 * 60 * 1000))
+    },
     store: new MongoStore({ url: DB})
 }));
 
@@ -57,8 +60,12 @@ app.use(function (req, res, next) {
  * Affichage de la page login
  */
 app.get('/', function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/login.html');
+    if(typeof req.session.user != 'undefined')
+        res.redirect('/home');
+    else {
+        res.setHeader('Content-Type', 'text/html');
+        res.sendFile(__dirname + '/html/login.html');
+    }
 });
 
 /**
