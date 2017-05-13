@@ -144,6 +144,14 @@ app.get("/edit/:id", function (req, res) {
 });
 
 /**
+ * Affichage de la page de lecture du graphe spécifié.
+ */
+app.get("/view/:id", function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/editor.html');
+});
+
+/**
  * Retourne un graphe entier grâce à son identifiant.
  * TODO : aller chercher en base le graphe demandé avec l'ensemble des ses liens et noeuds.
  */
@@ -281,4 +289,4 @@ io.on('connection', function(socket) {
     });
 });
 
-http.listen(8181);
+http.listen(8080);
