@@ -71,9 +71,17 @@ var app = new Vue({
         addAccess: function () {
             this.$http.post('/graph/addAccess',{graphID: this.graphID, userID: this.userID,access: this.picked}).then(response => {
                 this.getAccess(this.graphID);
+                this.userID = '';
+
             }, response => {
             });
 
+        },
+        deleteAccess: function (userID,typeAccess) {
+            this.$http.post('/graph/deleteAccess',{graphID: this.graphID, userID: userID, typeAccess: typeAccess}).then(response => {
+                this.getAccess(this.graphID);
+            }, response => {
+            });
         },
         canView: function(read){
             for (var i = 0; i < read.length; i++) {

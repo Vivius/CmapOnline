@@ -167,7 +167,7 @@ app.get("/graph/get/:id", function (req, res) {
 
 
 /**
- * Retourne la liste de tous les graphes.  {_id: new ObjectId(graph['owner'])}
+ * Retourne la liste de tous les graphes.
  */
 app.get("/graph/getAll", function (req, res) {
     return Mongo.connect(DB).then(function(db) {
@@ -212,25 +212,45 @@ app.post("/graph/create", function (req,res) {
 
 
 /**
- * Permet de créer un nouveau graphe.
+ * Permet d'ajouter un acces en écriture ou en lecture à un utilisateur (ID)
  */
 app.post("/graph/addAccess", function (req,res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
-            console.log(req.body);
             var query = {_id: new ObjectId(req.body['graphID'])} ;
 
             if(req.body['access'] == 'read'){
-                graphs.update(query,{$push: { "read":{ "id": req.body['userID']} } });
+                graphs.update(query,{$push: { read:{ id: req.body['userID']} } });
                 res.end();
             }
             else{
-                graphs.update(query,{$push: { "write":{ "id": req.body['userID']} } });
+                graphs.update(query,{$push: { write:{ id: req.body['userID']} } });
                 res.end();
             }
         });
     })
 });
+
+/**
+ * Permet de supprimer un acces en écriture ou en lecture à un utilisateur (ID)
+ */
+app.post("/graph/deleteAccess", function (req,res) {
+    Mongo.connect(DB, function (error, db) {
+        db.collection('graphs', {}, function (err, graphs) {
+            var query = {_id: new ObjectId(req.body['graphID'])};
+
+            if(req.body['typeAccess'] == 'read') {
+                graphs.update(query, {$unset: {read: {id: req.body['userID']}}});
+                res.end();
+            }
+            else{
+                graphs.update(query, {$unset: {write: {id: req.body['userID']}}});
+                res.end();
+            }
+        });
+    })
+});
+
 
 /**
  * Supprimer un graphe grâce à son id

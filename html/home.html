@@ -100,13 +100,19 @@
                     <div class="cell">
                         Access
                     </div>
+                    <div class="cell">
+                        Delete
+                    </div>
                 </div>
                 <div class="row">
                     <div class="cell">
                         {{currentUser.mail}}<b> (Owner)</b>
                     </div>
                     <div class="cell">
-                        -
+
+                    </div>
+                    <div class="cell">
+
                     </div>
                 </div>
                 <div class="row"  v-for="(user,index) in read">
@@ -119,7 +125,11 @@
                             <input type="radio" name="access" value="write"> Write
                         </form>
                     </div>
+                    <div class="cell">
+                        <img src="/images/home/delete.png" v-on:click="deleteAccess(user.id, 'read')">
+                    </div>
                 </div>
+
                 <div class="row"  v-for="(user,index) in write">
                     <div class="cell">
                         {{user.id}}
@@ -129,6 +139,9 @@
                                 <input type="radio" name="access" value="read"> Read
                                 <input type="radio" name="access" value="write" checked> Write
                         </form>
+                    </div>
+                    <div class="cell">
+                        <img src="/images/home/delete.png" v-on:click="deleteAccess(user.id, 'write')">
                     </div>
                 </div>
 
@@ -141,6 +154,9 @@
                             <input type="radio" name="access" value="read" v-model="picked"> Read
                             <input type="radio" name="access" value="write" v-model="picked"> Write
                         </form>
+                    </div>
+                    <div class="cell">
+
                     </div>
                 </div>
             </div>
