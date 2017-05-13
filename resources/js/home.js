@@ -5,12 +5,11 @@ import  Vue from 'vue/dist/vue';
 import VueResource from 'vue-resource';
 Vue.use(VueResource);
 
-
 var app = new Vue({
     el: '#app',
     data: {
-        picked:'read',
         name: '',
+        picked:'read',
         userID: '',
         seenBoxAccess: false,
         seenBlackOverlay: false,
@@ -30,6 +29,9 @@ var app = new Vue({
         this.getAllGraphs();
     },
     methods: {
+        updateSelected: function(newSelected) {
+            this.selected = newSelected
+        },
         insertGraph: function () {
             this.seenBoxNewGraph = false;
             this.seenBlackOverlay = false;
@@ -146,3 +148,4 @@ var app = new Vue({
         }
     }
 })
+
