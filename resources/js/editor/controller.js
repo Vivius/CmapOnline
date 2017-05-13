@@ -2,10 +2,10 @@
  * Module de gestion des contrôles utilisateur.
  */
 
-import $ from "jquery"
-import * as Graph from "./graph"
-import * as Networker from "./networker"
-import * as Editor from "./editor"
+import $ from "jquery";
+import * as Graph from "./graph";
+import * as Networker from "./networker";
+import * as Editor from "./editor";
 
 /******************************************************************
  *** VARIABLES                                                  ***
@@ -30,8 +30,8 @@ var validateLinkButton = $("#menu-link-validate");
 
 var linkEditionStatus = {
     type: "",
-    source: -1,
-    target: -1,
+    source: null,
+    target: null,
     enable: false,
     button: null
 };
@@ -43,13 +43,12 @@ var linkEditionStatus = {
 // Menu display
 
 /**
- * Met à jour l'affichage de la carte sélectionnée dans le menu latéral.
- * @param id
+ * Updates the selected node's menu.
+ * @param node object
  */
-function updateNodePanel(id) {
-    var node = Graph.getNodeById(id);
+function updateNodePanel(node) {
     if(node == null) {
-        if(Graph.selectedLink != -1) {
+        if(Graph.selectedLink != null) {
             nodeMenu.slideUp("fast");
         } else {
             nodeMenu.slideUp("fast", function () {
@@ -67,13 +66,12 @@ function updateNodePanel(id) {
 }
 
 /**
- * Met à jour l'affichage du lien sélectionné dans le menu latéral.
- * @param id
+ * Updates the selected link's menu.
+ * @param link object
  */
-function updateLinkPanel(id) {
-    var link = Graph.getLinkById(id);
+function updateLinkPanel(link) {
     if(link == null) {
-        if(Graph.selectedNode != -1) {
+        if(Graph.selectedNode != null) {
             linkMenu.slideUp("fast");
         } else {
             linkMenu.slideUp("fast", function () {
@@ -91,7 +89,7 @@ function updateLinkPanel(id) {
 }
 
 /**
- * Met à jour le menu selon le noeud ou le lien sélectionné.
+ * Updates the menu.
  */
 function updateMenu() {
     updateLinkPanel(Graph.selectedLink);
@@ -101,7 +99,7 @@ function updateMenu() {
 // Nodes
 
 /**
- * Fonction appelée quand on crée un nouveau noeud.
+ * Function called when a new node is created.
  */
 function createNode() {
     Networker.addNode({
@@ -114,9 +112,9 @@ function createNode() {
         graph_id: Editor.graphId
     }, function (node) {
         Graph.addNode(node);
-        Graph.selectNode(node._id);
+        Graph.selectNode(node);
         Graph.unselectLink();
-        addNodeEventListeners(node._id);
+        addNodeEventListeners(node);
         updateMenu();
     });
 }
@@ -126,8 +124,8 @@ function createNode() {
  */
 function editNode() {
     Graph.editNodeLabel(Graph.selectedNode, nodeNameInput.val());
-    Graph.getNodeById(Graph.selectedNode).comment = nodeCommentTextArea.val();
-    Networker.updateNode(Graph.getNodeById(Graph.selectedNode));
+    Graph.selectedNode.comment = nodeCommentTextArea.val();
+    Networker.updateNode(Graph.selectedNode);
 }
 
 /**
@@ -135,9 +133,14 @@ function editNode() {
  */
 function removeNode() {
     var nodeToRemove = Graph.selectedNode;
-    if(nodeToRemove == -1) return;
+    if(nodeToRemove == null) return;
+
+    $.each(Graph.dataset.links, function (i, link) {
+       if(link.source._id == nodeToRemove._id || link.target._id == nodeToRemove._id)
+           Networker.removeLink(link);
+    });
     Graph.unselectNode();
-    Networker.removeNode(Graph.getNodeById(nodeToRemove));
+    Networker.removeNode(nodeToRemove);
     Graph.removeNode(nodeToRemove);
     updateMenu();
 }
@@ -172,31 +175,30 @@ function createLink() {
  */
 function createLinkManager(linkEditionStatus, node) {
     if(linkEditionStatus.enable) {
-        if(linkEditionStatus.source == -1) linkEditionStatus.source = node;
-        else if(linkEditionStatus.target == -1) {
+        if(linkEditionStatus.source == null) linkEditionStatus.source = node;
+        else if(linkEditionStatus.target == null) {
             linkEditionStatus.target = node;
-            var source = Graph.getNodeById(linkEditionStatus.source);
-            var target = Graph.getNodeById(linkEditionStatus.target);
-            if(canCreateLink(source, target, linkEditionStatus.type) &&
-                Graph.findLink(source._id, target._id) == null &&
-                source._id != target._id) {
+            if(isLinkTypeCompatible(linkEditionStatus.source, linkEditionStatus.target, linkEditionStatus.type) &&
+                Graph.findLink(linkEditionStatus.source, linkEditionStatus.target) == null &&
+                linkEditionStatus.source._id != linkEditionStatus.target._id) {
                 Networker.addLink({
-                    source: linkEditionStatus.source,
-                    target: linkEditionStatus.target,
+                    source: linkEditionStatus.source._id,
+                    target: linkEditionStatus.target._id,
                     label: linkEditionStatus.type,
                     type: linkEditionStatus.type,
                     graph_id: Editor.graphId
                 }, function (link) {
                     Graph.addLink(
-                        link.source,
-                        link.target,
                         link._id,
+                        Graph.getNodeById(link.source),
+                        Graph.getNodeById(link.target),
                         link.label,
-                        link.type
+                        link.type,
+                        link.graph_id
                     );
-                    Graph.selectLink(link._id);
+                    Graph.selectLink(link);
                     Graph.unselectNode();
-                    addLinkEventListeners(link._id);
+                    addLinkEventListeners(link);
                     updateMenu();
                 });
             } else {
@@ -213,8 +215,8 @@ function createLinkManager(linkEditionStatus, node) {
  * Réinitialise l'état d'édition d'un lien.
  */
 function resetLinkEdition() {
-    linkEditionStatus.source = -1;
-    linkEditionStatus.target = -1;
+    linkEditionStatus.source = null;
+    linkEditionStatus.target = null;
     linkEditionStatus.type = null;
     linkEditionStatus.enable = false;
     linkCreatorButton.removeClass("selected");
@@ -232,14 +234,14 @@ function editLink() {
  */
 function changeLinkType() {
     var link = Graph.getLinkById(Graph.selectedLink);
-    if(!canCreateLink(link.source, link.target, $(this).val())) {
+    if(!isLinkTypeCompatible(link.source, link.target, $(this).val())) {
         alert("Contrainte de liaison.");
         $(this).val(link.type);
         return;
     }
 
     link.type = $(this).val();
-    Graph.getD3LinkById(Graph.selectedLink).style("stroke-dasharray", function () {
+    Graph.getD3Link(Graph.selectedLink).style("stroke-dasharray", function () {
         switch (link.type) {
             case "ako": return ("1, 0");
             case "association": return ("1, 0");
@@ -254,9 +256,9 @@ function changeLinkType() {
  */
 function removeLink() {
     var linkToDelete = Graph.selectedLink;
-    if(linkToDelete == -1) return;
+    if(linkToDelete == null) return;
     Graph.unselectLink();
-    Networker.removeLink(Graph.getLinkById(linkToDelete));
+    Networker.removeLink(linkToDelete);
     Graph.removeLink(linkToDelete);
     updateMenu();
 }
@@ -266,7 +268,7 @@ function removeLink() {
  ******************************************************************/
 
 // Menu général
-svgContainer.click(updateMenu);
+svgContainer.mousedown(updateMenu);
 svgContainer.click(resetLinkEdition);
 
 // Menu création
@@ -285,22 +287,32 @@ validateLinkButton.click(editLink);
 /**
  * Ajoute tous les event listeners liés à un noeud.
  * Cette fonction doit être utilisée quand un nouveau noeud est créé.
- * @param id int
+ * @param node object
  */
-function addNodeEventListeners(id) {
-    var node = $(Graph.getDomNodeById(id));
-    node.click(updateMenu);
-    node.click(function () { createLinkManager(linkEditionStatus, Graph.selectedNode); });
+function addNodeEventListeners(node) {
+    var nodeDom = $(Graph.getDomNode(node));
+    nodeDom.click(function () {
+        updateMenu();
+        createLinkManager(linkEditionStatus, Graph.selectedNode);
+    });
+    nodeDom.mouseup(function () {
+        Networker.updateNode(Graph.selectedNode);
+    });
+    nodeDom.dblclick(function () {
+        Graph.selectedNode.fixed = false;
+        Networker.updateNode(Graph.selectedNode);
+        Graph.unselectNode();
+    });
 }
 
 /**
  * Ajoute tous les event listeners liés à un lien.
  * Cette fonction doit être utilisée quand un nouveau lien est créé.
- * @param id int
+ * @param link object
  */
-function addLinkEventListeners(id) {
-    var link = $("#link-label-" + id);
-    link.click(updateMenu);
+function addLinkEventListeners(link) {
+    var linkDom = $("#link-label-" + link._id);
+    linkDom.click(updateMenu);
 }
 
 // Raccourcis clavier
@@ -331,7 +343,7 @@ $(window).keyup(function (e) {
  * @param linkType string
  * @returns boolean
  */
-function canCreateLink(nodeSource, nodeTarget, linkType) {
+function isLinkTypeCompatible(nodeSource, nodeTarget, linkType) {
     var validation = true;
     switch (linkType) {
         case "instance of":

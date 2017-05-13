@@ -2,10 +2,10 @@
  * Module principal de l'éditeur de carte conceptuelles.
  */
 
-import $ from "jquery"
-import * as Controller from "./controller"
-import * as Graph from  "./graph"
-import * as Networker from "./networker"
+import $ from "jquery";
+import * as Controller from "./controller";
+import * as Graph from  "./graph";
+import * as Networker from "./networker";
 
 var graphId = 0;
 var writeAccess = false;
@@ -23,13 +23,12 @@ $(function () {
     $.get("/graph/get/" + graphId, function (graph) {
         Graph.fetchGraph(graph);
         $.each(Graph.dataset.nodes, function (i, node) {
-            Controller.addNodeEventListeners(node._id);
+            Controller.addNodeEventListeners(node);
         });
         $.each(Graph.dataset.links, function (i, link) {
-            Controller.addLinkEventListeners(link._id);
+            Controller.addLinkEventListeners(link);
         });
-        if(!writeAccess)
-            $("#menu").hide();
+        if(!writeAccess) $("#menu").hide();
     });
 });
 
