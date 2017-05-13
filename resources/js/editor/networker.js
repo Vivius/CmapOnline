@@ -19,9 +19,11 @@ var socket = require('socket.io-client')(serverUrl);
  * @param callback function
  */
 function addNode(node, callback) {
-    socket.emit("node/add", node, function (data) {
-        callback(data);
-    });
+    if(Editor.writeAccess) {
+        socket.emit("node/add", node, function (data) {
+            callback(data);
+        });
+    }
 }
 
 /**
@@ -29,7 +31,7 @@ function addNode(node, callback) {
  * @param node object
  */
 function removeNode(node) {
-    socket.emit("node/remove", node);
+    if(Editor.writeAccess) socket.emit("node/remove", node);
 }
 
 /**
@@ -37,7 +39,7 @@ function removeNode(node) {
  * @param node
  */
 function updateNode(node) {
-    socket.emit("node/update", node);
+    if(Editor.writeAccess) socket.emit("node/update", node);
 }
 
 /**
@@ -46,16 +48,18 @@ function updateNode(node) {
  * @param callback function
  */
 function addLink(link, callback) {
-    socket.emit("link/add", link, function (data) {
-        callback(data);
-    });
+    if(Editor.writeAccess) {
+        socket.emit("link/add", link, function (data) {
+            callback(data);
+        });
+    }
 }
 
 /**
  * Demande au serveur de supprimer un lien en BDD.
  */
 function removeLink(link) {
-    socket.emit("link/remove", link);
+    if(Editor.writeAccess) socket.emit("link/remove", link);
 }
 
 /******************************************************************

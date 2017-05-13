@@ -8,6 +8,7 @@ import * as Graph from  "./graph"
 import * as Networker from "./networker"
 
 var graphId = 0;
+var writeAccess = false;
 
 /******************************************************************
  *** MAIN                                                       ***
@@ -18,6 +19,7 @@ var graphId = 0;
  */
 $(function () {
     graphId = getGraphId();
+    setAccessLevel();
     $.get("/graph/get/" + graphId, function (graph) {
         Graph.fetchGraph(graph);
         $.each(Graph.dataset.nodes, function (i, node) {
@@ -26,6 +28,8 @@ $(function () {
         $.each(Graph.dataset.links, function (i, link) {
             Controller.addLinkEventListeners(link._id);
         });
+        if(!writeAccess)
+            $("#menu").hide();
     });
 });
 
@@ -43,10 +47,22 @@ function getGraphId() {
     return split[split.length-1];
 }
 
+/**
+ * Définit si le graphe est ouvert en mode lecture ou écriture.
+ * @returns
+ */
+function setAccessLevel() {
+    var url = window.location.href;
+    var split = url.split("/");
+    var accessMode = split[split.length-2];
+    writeAccess = accessMode == "edit";
+}
+
 /******************************************************************
  *** EXPORTS                                                    ***
  ******************************************************************/
 
 export {
-    graphId
+    graphId,
+    writeAccess
 }
