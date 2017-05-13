@@ -21,8 +21,8 @@ var app = new Vue({
         },
         currentUser:[],
         graphs:[],
-        read:[],
-        write:[],
+        read:[{id: ''}],
+        write:[{id: ''}],
         graphID: 0,
     },
     created:function() {
@@ -84,20 +84,27 @@ var app = new Vue({
             });
         },
         canView: function(read){
-            for (var i = 0; i < read.length; i++) {
-                if(read[i]['id'] == this.currentUser._id)
-                    return true;
-                else
-                    return false;
+            if(typeof read !== 'undefined') {
+                for (var i = 0; i < read.length; i++) {
+                    if (read[i]['id'] == this.currentUser._id)
+                        return true;
+                    else
+                        return false;
+                }
             }
+            return false;
         },
         canEdit: function(write){
-            for (var i = 0; i < write.length; i++) {
-                if(write[i]['id'] == this.currentUser._id)
-                    return true;
-                else
-                    return false;
+            if(typeof write !== 'undefined') {
+
+                for (var i = 0; i < write.length; i++) {
+                    if (write[i]['id'] == this.currentUser._id)
+                        return true;
+                    else
+                        return false;
+                }
             }
+            return false;
         },
         isOwner: function(id){
             return id == this.currentUser._id;
