@@ -9,8 +9,32 @@ import * as Networker from "./networker"
 
 var graphId = 0;
 
+/******************************************************************
+ *** MAIN                                                       ***
+ ******************************************************************/
+
 /**
- * Retourne l'identifiant du graphe actuellement ouvert.
+ * Initialisation du graphe avec les données de la BDD.
+ */
+$(function () {
+    graphId = getGraphId();
+    $.get("/graph/get/" + graphId, function (graph) {
+        Graph.fetchGraph(graph);
+        $.each(Graph.dataset.nodes, function (i, node) {
+            Controller.addNodeEventListeners(node._id);
+        });
+        $.each(Graph.dataset.links, function (i, link) {
+            Controller.addLinkEventListeners(link._id);
+        });
+    });
+});
+
+/******************************************************************
+ *** HELPERS                                                    ***
+ ******************************************************************/
+
+/**
+ * Retourne l'identifiant du graphe actuellement ouvert dans l'éditeur.
  * @returns int
  */
 function getGraphId() {
@@ -19,12 +43,9 @@ function getGraphId() {
     return split[split.length-1];
 }
 
-$(function () {
-    graphId = getGraphId();
-    $.get("/graph/get/" + getGraphId(), function (graph) {
-        Graph.fetchGraph(graph);
-    });
-});
+/******************************************************************
+ *** EXPORTS                                                    ***
+ ******************************************************************/
 
 export {
     graphId

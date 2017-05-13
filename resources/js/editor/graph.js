@@ -4,7 +4,6 @@
 
 import $ from 'jquery';
 import * as d3 from 'd3';
-import * as Controller from "./controller"
 import * as Networker from "./networker"
 import bowser from 'bowser';
 import {intersect, shape} from 'svg-intersections';
@@ -53,21 +52,14 @@ function fetchGraph(graph) {
     $.each(graph.links, function (k, link) {
         dataset.links.push({
             _id: link._id,
-            source: getDataNodeById(link.source),
-            target: getDataNodeById(link.target),
+            source: getNodeById(link.source),
+            target: getNodeById(link.target),
             label: link.label,
             type: link.type,
             graph_id: link.graph_id
         });
     });
     update();
-    console.log(dataset);
-    $.each(dataset.nodes, function (k, node) {
-        Controller.addNodeEventListeners(node._id);
-    });
-    $.each(dataset.links, function (k, link) {
-        Controller.addLinkEventListeners(link._id);
-    });
 }
 
 /******************************************************************
@@ -318,7 +310,7 @@ function nodeDragStart(node) {
  * Evénement appelé lorsque l'on arrête de déplacer une carte.
  */
 function nodeDragEnd() {
-    Networker.updateNode(getDataNodeById(selectedNode));
+    Networker.updateNode(getNodeById(selectedNode));
 }
 
 /**
@@ -329,7 +321,7 @@ function nodeDragEnd() {
 function nodeDbClick(node) {
     d3.event.stopPropagation(); // Stop l'event zoom lors du double clic.
     d3.select(this).classed("fixed", node.fixed = false);
-    Networker.updateNode(getDataNodeById(selectedNode));
+    Networker.updateNode(getNodeById(selectedNode));
     unselectNode();
 }
 
@@ -401,7 +393,7 @@ function addNode(node) {
  * @param newLabel String
  */
 function editNodeLabel(id, newLabel) {
-    var node = getDataNodeById(id);
+    var node = getNodeById(id);
     var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
     node.name = newLabel;
     d3.select(getDomNodeById(id)).select("text").text(formattedLabel);
@@ -414,8 +406,8 @@ function editNodeLabel(id, newLabel) {
  * @param y
  */
 function updateNodePosition(id, x, y) {
-    var node = getDataNodeById(id);
-    if(node != null) {
+    var node = getNodeById(id);
+    if(node.fixed) {
         node.x = x;
         node.y = y;
         node.px = x;
@@ -431,7 +423,7 @@ function updateNodePosition(id, x, y) {
 function removeNode(id) {
     if(id == -1) return false;
     var linksToDelete = [];
-    var node = getDataNodeById(id);
+    var node = getNodeById(id);
     dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
     $.each(dataset.links, function (i, link) {
         if(link.source._id == node._id || link.target._id == node._id)
@@ -450,7 +442,7 @@ function removeNode(id) {
  * @param id int
  * @returns object
  */
-function getDataNodeById(id) {
+function getNodeById(id) {
     var node = null;
     $.each(dataset.nodes, function (i, val) {
         if(val._id == id)
@@ -505,8 +497,8 @@ function unselectNode() {
  * @param type string
  */
 function addLink(fromNodeID, toNodeID, newID, label, type) {
-    var iFrom = dataset.nodes.indexOf(getDataNodeById(fromNodeID));
-    var iTo = dataset.nodes.indexOf(getDataNodeById(toNodeID));
+    var iFrom = dataset.nodes.indexOf(getNodeById(fromNodeID));
+    var iTo = dataset.nodes.indexOf(getNodeById(toNodeID));
     var newLink = {_id: newID, source: iFrom, target: iTo, label: label, type: type};
     dataset.links.push(newLink);
     update();
@@ -533,7 +525,7 @@ function findLink(nodeSource, nodeTarget) {
  * @param newLabel String
  */
 function editLinkLabel(id, newLabel) {
-    var linkData = getDataLinkById(id);
+    var linkData = getLinkById(id);
     linkData.label = newLabel;
     d3.selectAll("textPath").filter(function (d) { return linkData._id == d._id; }).text(linkData.label);
 }
@@ -544,7 +536,7 @@ function editLinkLabel(id, newLabel) {
  */
 function removeLink(id) {
     if(id == -1) return false;
-    var link = dataset.links.indexOf(getDataLinkById(id));
+    var link = dataset.links.indexOf(getLinkById(id));
     dataset.links.splice(link, 1);
     update();
     return link;
@@ -555,7 +547,7 @@ function removeLink(id) {
  * @param id int
  * @returns object
  */
-function getDataLinkById(id) {
+function getLinkById(id) {
     var link = null;
     $.each(dataset.links, function (i, val) {
         if(val._id == id)
@@ -606,6 +598,7 @@ function unselectLink() {
 export {
     selectedNode,
     selectedLink,
+    dataset,
 
     fetchGraph,
 
@@ -613,7 +606,7 @@ export {
     editNodeLabel,
     updateNodePosition,
     removeNode,
-    getDataNodeById,
+    getNodeById,
     getD3NodeById,
     getDomNodeById,
     selectNode,
@@ -624,15 +617,10 @@ export {
     editLinkLabel,
     removeLink,
     getD3LinkById,
-    getDataLinkById,
+    getLinkById,
     getDomLinkById,
     selectLink,
     unselectLink,
-
-    nodeSelectionStyle,
-    nodeDefaultStyle,
-    linkSelectionStyle,
-    linkDefaultStyle
 }
 
 
