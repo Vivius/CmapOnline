@@ -24,47 +24,43 @@ var nodes, links, linkLabels;
 var selectedNode = null, selectedLink = null;
 
 /******************************************************************
- *** JEU DE DONNEES                                             ***
+ *** GESTION DES DONNEES                                        ***
  ******************************************************************/
 
 var dataset = {
-    nodes: [
-        {_id: 0, name: "Langage de prog.", type: "concept"},
-        {_id: 1, name: "Procédural", type: "concept"},
-        {_id: 2, name: "Orienté objet", type: "concept"},
-        {_id: 3, name: "Fonctionnel", type: "concept"},
-        {_id: 4, name: "Prototypé", type: "concept"},
-
-        {_id: 5, name: "C", type: "object"},
-        {_id: 6, name: "C++", type: "object"},
-        {_id: 7, name: "LISP", type: "object"},
-        {_id: 8, name: "C#", type: "object"},
-        {_id: 9, name: "Javascript", type: "object"},
-        {_id: 10, name: "PHP", type: "object"},
-        {_id: 11, name: "Fortran", type: "object"},
-        {_id: 12, name: "Scala", type: "object"},
-        {_id: 13, name: "Java", type: "object"},
-        {_id: 14, name: "Smalltalk", type: "object"},
-        {_id: 15, name: "Brain Fuck", type: "object"}
-    ],
-    links: [
-        {_id: 1, source: 1, target: 0, label: "est un langage de prog.", type: "ako"},
-        {_id: 2, source: 2, target: 0, label: "est un langage de prog.", type: "ako"},
-        {_id: 3, source: 3, target: 0, label: "est un langage de prog.", type: "ako"},
-        {_id: 4, source: 4, target: 0, label: "est un langage de prog.", type: "ako"},
-
-        {_id: 5, source: 5, target: 1, label: "est procédural", type: "instance of"},
-        {_id: 6, source: 6, target: 2, label: "est orienté objet", type: "instance of"},
-        {_id: 7, source: 7, target: 3, label: "est fonctionnel", type: "instance of"},
-        {_id: 8, source: 8, target: 2, label: "est orienté objet", type: "instance of"},
-        {_id: 9, source: 9, target: 4, label: "est prototypé", type: "instance of"},
-        {_id: 10, source: 10, target: 2, label: "est orienté objet", type: "instance of"},
-        {_id: 11, source: 11, target: 1, label: "est procédural", type: "instance of"},
-        {_id: 12, source: 12, target: 3, label: "est fonctionnel", type: "instance of"},
-        {_id: 13, source: 13, target: 2, label: "est orienté objet", type: "instance of"},
-        {_id: 14, source: 14, target: 2, label: "est orienté objet", type: "instance of"}
-    ]
+    nodes: [],
+    links: []
 };
+
+/**
+ * Permet d'importer les données d'un graphe dans celui-ci.
+ * @param graph
+ */
+function fetchGraph(graph) {
+    $.each(graph.nodes, function (k, node) {
+        dataset.nodes.push({
+            _id: node._id,
+            name: node.name,
+            type: node.type,
+            comment: node.comment,
+            fixed: node.fixed,
+            x: node.x,
+            y: node.y,
+            graph_id: node.graph_id
+        });
+    });
+    $.each(graph.links, function (k, link) {
+        dataset.links.push({
+            _id: link._id,
+            source: getNodeById(link.source),
+            target: getNodeById(link.target),
+            label: link.label,
+            type: link.type,
+            graph_id: link.graph_id
+        });
+    });
+    update();
+}
 
 /******************************************************************
  *** CREATION DU GRAPHE                                         ***
@@ -114,8 +110,6 @@ var force = d3.layout.force()
 force.drag().on("dragstart", nodeDragStart); // Drag des cartes conceptuelles.
 force.drag().on("dragend", nodeDragEnd); // Event de fin de drag.
 force.on("tick", forceTick); // Evénement tick du force layout.
-
-update(); // Premier affichage du graphe.
 
 function update() {
     // Rafraichissement du force layout avec les données existentes.
@@ -316,7 +310,7 @@ function nodeDragStart(node) {
  * Evénement appelé lorsque l'on arrête de déplacer une carte.
  */
 function nodeDragEnd() {
-    Networker.updateNode(getDataNodeById(selectedNode));
+    Networker.updateNode(getNodeById(selectedNode));
 }
 
 /**
@@ -327,7 +321,7 @@ function nodeDragEnd() {
 function nodeDbClick(node) {
     d3.event.stopPropagation(); // Stop l'event zoom lors du double clic.
     d3.select(this).classed("fixed", node.fixed = false);
-    Networker.updateNode(getDataNodeById(selectedNode));
+    Networker.updateNode(getNodeById(selectedNode));
     unselectNode();
 }
 
@@ -399,7 +393,7 @@ function addNode(node) {
  * @param newLabel String
  */
 function editNodeLabel(id, newLabel) {
-    var node = getDataNodeById(id);
+    var node = getNodeById(id);
     var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
     node.name = newLabel;
     d3.select(getDomNodeById(id)).select("text").text(formattedLabel);
@@ -412,8 +406,8 @@ function editNodeLabel(id, newLabel) {
  * @param y
  */
 function updateNodePosition(id, x, y) {
-    var node = getDataNodeById(id);
-    if(node != null) {
+    var node = getNodeById(id);
+    if(node.fixed) {
         node.x = x;
         node.y = y;
         node.px = x;
@@ -429,13 +423,14 @@ function updateNodePosition(id, x, y) {
 function removeNode(id) {
     if(id == -1) return false;
     var linksToDelete = [];
-    var node = getDataNodeById(id);
+    var node = getNodeById(id);
     dataset.nodes.splice(dataset.nodes.indexOf(node), 1);
     $.each(dataset.links, function (i, link) {
         if(link.source._id == node._id || link.target._id == node._id)
             linksToDelete.push(link);
     });
     $.each(linksToDelete, function (i, link) {
+        Networker.removeLink(link);
         dataset.links.splice(dataset.links.indexOf(link), 1);
     });
     update();
@@ -447,7 +442,7 @@ function removeNode(id) {
  * @param id int
  * @returns object
  */
-function getDataNodeById(id) {
+function getNodeById(id) {
     var node = null;
     $.each(dataset.nodes, function (i, val) {
         if(val._id == id)
@@ -502,8 +497,8 @@ function unselectNode() {
  * @param type string
  */
 function addLink(fromNodeID, toNodeID, newID, label, type) {
-    var iFrom = dataset.nodes.indexOf(getDataNodeById(fromNodeID));
-    var iTo = dataset.nodes.indexOf(getDataNodeById(toNodeID));
+    var iFrom = dataset.nodes.indexOf(getNodeById(fromNodeID));
+    var iTo = dataset.nodes.indexOf(getNodeById(toNodeID));
     var newLink = {_id: newID, source: iFrom, target: iTo, label: label, type: type};
     dataset.links.push(newLink);
     update();
@@ -530,7 +525,7 @@ function findLink(nodeSource, nodeTarget) {
  * @param newLabel String
  */
 function editLinkLabel(id, newLabel) {
-    var linkData = getDataLinkById(id);
+    var linkData = getLinkById(id);
     linkData.label = newLabel;
     d3.selectAll("textPath").filter(function (d) { return linkData._id == d._id; }).text(linkData.label);
 }
@@ -541,7 +536,7 @@ function editLinkLabel(id, newLabel) {
  */
 function removeLink(id) {
     if(id == -1) return false;
-    var link = dataset.links.indexOf(getDataLinkById(id));
+    var link = dataset.links.indexOf(getLinkById(id));
     dataset.links.splice(link, 1);
     update();
     return link;
@@ -552,7 +547,7 @@ function removeLink(id) {
  * @param id int
  * @returns object
  */
-function getDataLinkById(id) {
+function getLinkById(id) {
     var link = null;
     $.each(dataset.links, function (i, val) {
         if(val._id == id)
@@ -603,12 +598,15 @@ function unselectLink() {
 export {
     selectedNode,
     selectedLink,
+    dataset,
+
+    fetchGraph,
 
     addNode,
     editNodeLabel,
     updateNodePosition,
     removeNode,
-    getDataNodeById,
+    getNodeById,
     getD3NodeById,
     getDomNodeById,
     selectNode,
@@ -619,15 +617,10 @@ export {
     editLinkLabel,
     removeLink,
     getD3LinkById,
-    getDataLinkById,
+    getLinkById,
     getDomLinkById,
     selectLink,
     unselectLink,
-
-    nodeSelectionStyle,
-    nodeDefaultStyle,
-    linkSelectionStyle,
-    linkDefaultStyle
 }
 
 

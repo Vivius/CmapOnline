@@ -5,6 +5,7 @@
 import $ from "jquery"
 import * as Graph from "./graph"
 import * as Networker from "./networker"
+import * as Editor from "./editor"
 
 /******************************************************************
  *** VARIABLES                                                  ***
@@ -12,8 +13,6 @@ import * as Networker from "./networker"
 
 var svgContainer = $("#svg-container");
 var menu = $("#menu");
-var nodes = $(".node");
-var links = $(".link-label");
 
 var nodeCreatorButton = $(".node-creator");
 var nodeMenu = $("#menu-node");
@@ -48,7 +47,7 @@ var linkEditionStatus = {
  * @param id
  */
 function updateNodePanel(id) {
-    var node = Graph.getDataNodeById(id);
+    var node = Graph.getNodeById(id);
     if(node == null) {
         if(Graph.selectedLink != -1) {
             nodeMenu.slideUp("fast");
@@ -72,7 +71,7 @@ function updateNodePanel(id) {
  * @param id
  */
 function updateLinkPanel(id) {
-    var link = Graph.getDataLinkById(id);
+    var link = Graph.getLinkById(id);
     if(link == null) {
         if(Graph.selectedNode != -1) {
             linkMenu.slideUp("fast");
@@ -105,9 +104,15 @@ function updateMenu() {
  * Fonction appelée quand on crée un nouveau noeud.
  */
 function createNode() {
-    Networker.addNode({name: "NEW", type: function (id) {
-        return id == "concept-creator" ? "concept" : "object";
-    }($(this).attr("id"))}, function (node) {
+    Networker.addNode({
+        name: "NEW",
+        type: function (id) {
+            return id == "concept-creator" ? "concept" : "object";
+        }($(this).attr("id")),
+        comment: "",
+        fixed: false,
+        graph_id: Editor.graphId
+    }, function (node) {
         Graph.addNode(node);
         Graph.selectNode(node._id);
         Graph.unselectLink();
@@ -121,8 +126,8 @@ function createNode() {
  */
 function editNode() {
     Graph.editNodeLabel(Graph.selectedNode, nodeNameInput.val());
-    Graph.getDataNodeById(Graph.selectedNode).comment = nodeCommentTextArea.val();
-    Networker.updateNode(Graph.getDataNodeById(Graph.selectedNode));
+    Graph.getNodeById(Graph.selectedNode).comment = nodeCommentTextArea.val();
+    Networker.updateNode(Graph.getNodeById(Graph.selectedNode));
 }
 
 /**
@@ -132,7 +137,7 @@ function removeNode() {
     var nodeToRemove = Graph.selectedNode;
     if(nodeToRemove == -1) return;
     Graph.unselectNode();
-    Networker.removeNode(Graph.getDataNodeById(nodeToRemove));
+    Networker.removeNode(Graph.getNodeById(nodeToRemove));
     Graph.removeNode(nodeToRemove);
     updateMenu();
 }
@@ -170,8 +175,8 @@ function createLinkManager(linkEditionStatus, node) {
         if(linkEditionStatus.source == -1) linkEditionStatus.source = node;
         else if(linkEditionStatus.target == -1) {
             linkEditionStatus.target = node;
-            var source = Graph.getDataNodeById(linkEditionStatus.source);
-            var target = Graph.getDataNodeById(linkEditionStatus.target);
+            var source = Graph.getNodeById(linkEditionStatus.source);
+            var target = Graph.getNodeById(linkEditionStatus.target);
             if(canCreateLink(source, target, linkEditionStatus.type) &&
                 Graph.findLink(source._id, target._id) == null &&
                 source._id != target._id) {
@@ -180,6 +185,7 @@ function createLinkManager(linkEditionStatus, node) {
                     target: linkEditionStatus.target,
                     label: linkEditionStatus.type,
                     type: linkEditionStatus.type,
+                    graph_id: Editor.graphId
                 }, function (link) {
                     Graph.addLink(
                         link.source,
@@ -225,7 +231,7 @@ function editLink() {
  * Fonction appelée quand on modifie le type d'un lien.
  */
 function changeLinkType() {
-    var link = Graph.getDataLinkById(Graph.selectedLink);
+    var link = Graph.getLinkById(Graph.selectedLink);
     if(!canCreateLink(link.source, link.target, $(this).val())) {
         alert("Contrainte de liaison.");
         $(this).val(link.type);
@@ -250,7 +256,7 @@ function removeLink() {
     var linkToDelete = Graph.selectedLink;
     if(linkToDelete == -1) return;
     Graph.unselectLink();
-    Networker.removeLink(Graph.getDataLinkById(linkToDelete));
+    Networker.removeLink(Graph.getLinkById(linkToDelete));
     Graph.removeLink(linkToDelete);
     updateMenu();
 }
@@ -260,8 +266,6 @@ function removeLink() {
  ******************************************************************/
 
 // Menu général
-nodes.click(updateMenu);
-links.click(updateMenu);
 svgContainer.click(updateMenu);
 svgContainer.click(resetLinkEdition);
 
@@ -277,7 +281,6 @@ validateNodeButton.click(editNode);
 linkTypeSelection.change(changeLinkType);
 deleteLinkButton.click(removeLink);
 validateLinkButton.click(editLink);
-nodes.click(function () { createLinkManager(linkEditionStatus, Graph.selectedNode); });
 
 /**
  * Ajoute tous les event listeners liés à un noeud.
@@ -292,6 +295,7 @@ function addNodeEventListeners(id) {
 
 /**
  * Ajoute tous les event listeners liés à un lien.
+ * Cette fonction doit être utilisée quand un nouveau lien est créé.
  * @param id int
  */
 function addLinkEventListeners(id) {
@@ -322,8 +326,8 @@ $(window).keyup(function (e) {
 /**
  * Détermine les contraintes de liaison entre un lien et 2 noeuds au niveau de leur type.
  * Retourne true si la création est possible, false sinon.
- * @param nodeSource object
- * @param nodeTarget object
+ * @param nodeSource node
+ * @param nodeTarget node
  * @param linkType string
  * @returns boolean
  */

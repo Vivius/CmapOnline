@@ -4,9 +4,10 @@ var Mongo = require("mongodb").MongoClient;
 var ObjectId = require("mongodb").ObjectID;
 var Session = require('express-session');
 var MongoStore = require('connect-mongo')(Session);
-var Bcrypt = require("bcrypt-nodejs");
+var Bcrypt = require('bcrypt-nodejs');
+var favicon = require('serve-favicon');
 
-var DB = "mongodb://localhost/CmapDb";
+var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
 Mongo.connect(DB, function(error, db) {
@@ -25,6 +26,7 @@ app.use("/js",Express.static(__dirname + '/js'));
 app.use("/html",Express.static(__dirname + '/html'));
 app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({ extended: true }));
+app.use(favicon(__dirname + '/images/favicon/favicon.ico'));
 
 // Initialisation de la session.
 app.use(Session({
@@ -34,6 +36,14 @@ app.use(Session({
     cookie: { secure: false },
     store: new MongoStore({ url: DB})
 }));
+
+// Middleware authentification
+app.use(function (req, res, next) {
+    if(!req.session.user && req.path !== "/" && req.path !== "/login" && req.path !== "/signup") {
+        return res.redirect('/');
+    }
+    next();
+});
 
 //------------------------------------------------------------
 // HELPERSS
@@ -52,7 +62,7 @@ app.get('/', function (req, res) {
 });
 
 /**
- * Recherche un utilisateur en base
+ * Login
  */
 app.post("/login", function (req,res) {
     Mongo.connect(DB, function (error, db) {
@@ -64,6 +74,14 @@ app.post("/login", function (req,res) {
                 res.json(false);
         });
     });
+});
+
+/**
+ * Logout
+ */
+app.post("/logout", function (req,res) {
+    req.session.destroy();
+    res.redirect('/');
 });
 
 /**
@@ -97,7 +115,6 @@ app.get('/user/current' , function(req, res) {
  * Retourne les access du graph
  */
 app.post("/graph/getAccess", function (req, res) {
-
     Mongo.connect(DB, function(error, db) {
         var query = {_id: new ObjectId(req.body['_id'])};
         var projection = {read:1, write:1, owner:1, _id:0};
@@ -126,12 +143,26 @@ app.get("/edit/:id", function (req, res) {
 });
 
 /**
+ * Affichage de la page de lecture du graphe spécifié.
+ */
+app.get("/view/:id", function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/editor.html');
+});
+
+/**
  * Retourne un graphe entier grâce à son identifiant.
  * TODO : aller chercher en base le graphe demandé avec l'ensemble des ses liens et noeuds.
  */
 app.get("/graph/get/:id", function (req, res) {
-    console.log(req.params["id"]);
-    res.json({ nodes: {}, links: {} });
+    var id = req.params["id"];
+    Mongo.connect(DB, function (error, db) {
+       db.collection("nodes").find({graph_id: id}).toArray(function (err, nodes) {
+           db.collection("links").find({graph_id: id}).toArray(function (err, links) {
+               res.json({nodes: nodes, links: links});
+           });
+       });
+    });
 });
 
 
@@ -256,7 +287,7 @@ io.on('connection', function(socket) {
     // Suppression d'un noeud
     socket.on("node/remove", function (node, fn) {
         Mongo.connect(DB, function (error, db) {
-            db.collection('nodes').remove(node, function (error, results) {
+            db.collection('nodes').remove({_id: new ObjectId(node._id)}, function (error, results) {
                 io.emit("node/removed", node);
                 console.log("NODE " + node._id + " REMOVED");
             });
@@ -275,7 +306,7 @@ io.on('connection', function(socket) {
     // Suppression d'un lien
     socket.on("link/remove", function (link, fn) {
         Mongo.connect(DB, function (error, db) {
-            db.collection('links').remove(link, function (error, results) {
+            db.collection('links').remove({_id: new ObjectId(link._id)}, function (error, results) {
                 io.emit("link/removed", link);
                 console.log("LINK " + link._id + " REMOVED");
             });

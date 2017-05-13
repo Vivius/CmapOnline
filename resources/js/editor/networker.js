@@ -2,33 +2,36 @@
  * Module de gestion des accès réseau.
  */
 
-import * as Graph from "./graph"
-import * as Controller from "./controller"
+import * as Graph from "./graph";
+import * as Controller from "./controller";
+import * as Editor from "./editor";
+
 var serverUrl = "http://localhost:8080";
 var socket = require('socket.io-client')(serverUrl);
 
-
 /******************************************************************
- *** EMITS                                                      ***
+ *** ENVOI                                                      ***
  ******************************************************************/
 
 /**
- * Envoie un noeud au serveur pour l'ajouter et renvoie le noeud ajouté en paramètre dans la callback donnée.
+ * Envoie un noeud au serveur pour l'ajouter en BDD et renvoie le noeud ajouté en paramètre dans la callback donnée.
  * @param node object
- * @param callback
+ * @param callback function
  */
 function addNode(node, callback) {
-    socket.emit("node/add", node, function (data) {
-        callback(data);
-    });
+    if(Editor.writeAccess) {
+        socket.emit("node/add", node, function (data) {
+            callback(data);
+        });
+    }
 }
 
 /**
  * Demande au serveur de supprimer en BDD le noeud passé.
- * @param node
+ * @param node object
  */
 function removeNode(node) {
-    socket.emit("node/remove", node);
+    if(Editor.writeAccess) socket.emit("node/remove", node);
 }
 
 /**
@@ -36,79 +39,86 @@ function removeNode(node) {
  * @param node
  */
 function updateNode(node) {
-    socket.emit("node/update", node);
+    if(Editor.writeAccess) socket.emit("node/update", node);
 }
 
 /**
  * Demande au serveur d'ajouter un lien en BDD.
- * @param link
- * @param callback
+ * @param link object
+ * @param callback function
  */
 function addLink(link, callback) {
-    socket.emit("link/add", link, function (data) {
-        callback(data);
-    });
+    if(Editor.writeAccess) {
+        socket.emit("link/add", link, function (data) {
+            callback(data);
+        });
+    }
 }
 
 /**
  * Demande au serveur de supprimer un lien en BDD.
  */
 function removeLink(link) {
-    socket.emit("link/remove", link);
+    if(Editor.writeAccess) socket.emit("link/remove", link);
 }
 
 /******************************************************************
- *** ON                                                         ***
+ *** RECEPTION                                                  ***
  ******************************************************************/
 
 /**
- * Ajoute un nouveau noeud si le serveur l'indique via le socket.
+ * Ajoute un nouveau noeud venant du serveur au graphe.
  */
 socket.on("node/added", function (node) {
-   if(Graph.getDataNodeById(node._id) == null) {
-       Graph.addNode(node);
-       Controller.addNodeEventListeners(node._id);
-       console.log("NODE " + node._id + " ADDED");
-   }
+    if(node.graph_id != Editor.graphId) return;
+    if(Graph.getNodeById(node._id) == null) {
+        Graph.addNode(node);
+        Controller.addNodeEventListeners(node._id);
+        console.log("NODE " + node._id + " ADDED");
+    }
 });
 
 socket.on("node/updated", function (node) {
-   var nodeToUpdate = Graph.getDataNodeById(node._id);
-   if(nodeToUpdate != null) {
-       Graph.editNodeLabel(node._id, node.name);
-       Graph.updateNodePosition(node._id, node.x, node.y);
-       nodeToUpdate.fixed = node.fixed;
-       nodeToUpdate.type = node.type;
-       nodeToUpdate.comment = node.comment;
-   }
+    if(node.graph_id != Editor.graphId) return;
+    var nodeToUpdate = Graph.getNodeById(node._id);
+    if(nodeToUpdate != null) {
+        nodeToUpdate.fixed = node.fixed;
+        nodeToUpdate.type = node.type;
+        nodeToUpdate.comment = node.comment;
+        Graph.editNodeLabel(node._id, node.name);
+        Graph.updateNodePosition(node._id, node.x, node.y);
+    }
 });
 
 /**
  * Supprime un noeud si le serveur le demande via le socket.
  */
 socket.on("node/removed", function (node) {
-   if(Graph.getDataNodeById(node._id) != null) {
-       Graph.removeNode(node._id);
-       console.log("NODE " + node._id + " DELETED");
-   }
+    if(node.graph_id != Editor.graphId) return;
+    if(Graph.getNodeById(node._id) != null) {
+        Graph.removeNode(node._id);
+        console.log("NODE " + node._id + " DELETED");
+    }
 });
 
 /**
  * Ajoute un nouveau lien entre 2 noeuds si le serveur l'indique via le socket.
  */
 socket.on("link/added", function (link) {
-   if(Graph.getDataLinkById(link._id) == null) {
-       Graph.addLink(link.source, link.target, link._id, link.label, link.type);
-       Controller.addLinkEventListeners(link._id);
-       console.log("LINK " + link._id + " ADDED");
-   }
+    if(link.graph_id != Editor.graphId) return;
+    if(Graph.getLinkById(link._id) == null) {
+        Graph.addLink(link.source, link.target, link._id, link.label, link.type);
+        Controller.addLinkEventListeners(link._id);
+        console.log("LINK " + link._id + " ADDED");
+    }
 });
 
 /**
- * Supprime un lien si le serveur le demande via le socket.
+ * Supprime un lien sur ordre du serveur.
  */
 socket.on("link/removed", function (link) {
-    if(Graph.getDataLinkById(link._id) != null) {
+    if(link.graph_id != Editor.graphId) return;
+    if(Graph.getLinkById(link._id) != null) {
         Graph.removeLink(link._id);
         console.log("LINK " + link._id + " DELETED");
     }
