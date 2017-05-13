@@ -58,7 +58,7 @@
                     <img src="/images/home/door-key.png">
                 </div>
                 <div align='right' class="cell">
-                    <img src="/images/home/export.png">
+                    <a :download="graph.name + '.json'" :href="'/graph/get/' + graph._id"><img src="/images/home/export.png"></a>
                 </div>
                 <div align='right' class="cell">
                     <img src="/images/home/eye.png" v-on:click="redirectToViewer(graph._id)">
