@@ -14,7 +14,7 @@ import {intersect, shape} from 'svg-intersections';
 // IDs
 var svgContainer = "#svg-container";
 
-// COnfiguration
+// Configuration
 var width = $(svgContainer).width(), height = $(svgContainer).height();
 var linkDistance = 300;
 var conceptColor = "#ffc55a", objectColor = "#7ba1ff";
@@ -71,7 +71,7 @@ var svg = d3
     .select(svgContainer)
     .append("svg")
     .call(d3.behavior.zoom().on("zoom", function () {
-        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
     }))
     .append("g");
 
@@ -107,8 +107,7 @@ var force = d3.layout.force()
     .gravity(0.05);
 
 // Force events
-force.drag().on("dragstart", nodeDragStart);
-force.drag().on("dragend", nodeDragEnd);
+force.drag().on("dragstart", function () { d3.event.sourceEvent.stopPropagation(); });
 force.on("tick", forceTick);
 
 /**
@@ -140,8 +139,7 @@ function update() {
                 case "instance of": return ("3, 3");
                 default: return ("1, 0");
             }
-        })
-        .on("click", function (d) { linkClick(d)});
+        });
 
     // Makes the link's labels.
     linkLabels = svg.selectAll(".link-label")
@@ -156,8 +154,7 @@ function update() {
             'font-size': 13,
             'fill': '#000000',
             "text-anchor": "middle"
-        })
-        .on("click", function (d) { linkClick(d)});
+        });
     linkLabels
         .append('textPath')
         .attr('xlink:href', function (d) { return '#link-' + d._id })
@@ -170,7 +167,6 @@ function update() {
         .append("g")
         .attr("class", "node")
         .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
-        .on("click", function() { d3.event.stopPropagation(); }) // Stop the propagation on the svg container.
         .call(force.drag);
     nodes
         .append("rect")
@@ -178,7 +174,8 @@ function update() {
             "width": nodeWidth,
             "height": nodeHeight,
             "rx": function (d) { return d.type == "concept" ? 10 : 0; },
-            "ry": function (d) { return d.type == "concept" ? 10 : 0; }
+            "ry": function (d) { return d.type == "concept" ? 10 : 0; },
+            "class": function (d) { return d.type == "concept" ? "concept" : "object" }
         })
         .style("fill", function (d) { return d.type == "concept" ? conceptColor : objectColor; });
     nodes
@@ -191,6 +188,10 @@ function update() {
             "text-anchor": "middle"
         })
         .text(function (d) { return d.type == "concept" ? "< " + d.name + " >" : d.name; });
+    nodes
+        .attr('x', function (d) {
+           editNodeLabel(d, d.name);
+        });
 
     // Updates the references after creation.
     nodes = svg.selectAll('.node');
@@ -222,9 +223,6 @@ function update() {
     nodes = svg.selectAll('.node');
     links = svg.selectAll(".link");
     linkLabels = svg.selectAll(".link-label");
-
-    // Double-click event to released the card.
-    nodes.on("dblclick", nodeDbClick);
 }
 
 /******************************************************************
@@ -232,20 +230,12 @@ function update() {
  ******************************************************************/
 
 /**
- * Event fired when the window is resized.
+ * Event called when the window is resized.
+ * It allows to center again the position of the center of gravity.
  */
 $(window).resize(function() {
     force.size([$(svgContainer).width(), $(svgContainer).height()]);
     force.start();
-});
-
-/**
- * Event fired when the user click on the svg container.
- * Allow to deselect the links and the nodes.
- */
-$(svgContainer).mousedown(function () {
-    unselectLink();
-    unselectNode();
 });
 
 /**
@@ -260,9 +250,17 @@ function forceTick() {
     // Updates the link's position.
     links.attr('d', function (d) {
         // Find the intersection between the link and the node.
-        var line = shape("line", {x1: (d.source.x + nodeWidth / 2), y1: (d.source.y + nodeHeight / 2), x2: (d.target.x + nodeWidth / 2), y2: (d.target.y + nodeHeight / 2)});
-        var rect_source = shape("rect", {x: d.source.x, y: d.source.y, width: nodeWidth, height: nodeHeight});
-        var rect_target = shape("rect", {x: d.target.x, y: d.target.y, width: nodeWidth, height: nodeHeight});
+        var sourceBox = getD3Node(d.source).select("rect").node().getBBox();
+        var targetBox = getD3Node(d.target).select("rect").node().getBBox();
+
+        var line = shape("line", {
+            x1: (d.source.x + sourceBox.width / 2),
+            y1: (d.source.y + sourceBox.height / 2),
+            x2: (d.target.x + targetBox.width / 2),
+            y2: (d.target.y + targetBox.height / 2)
+        });
+        var rect_source = shape("rect", {x: d.source.x, y: d.source.y, width: sourceBox.width, height: sourceBox.height});
+        var rect_target = shape("rect", {x: d.target.x, y: d.target.y, width: targetBox.width, height: targetBox.height});
         var source = intersect(rect_source, line);
         var target = intersect(rect_target, line);
 
@@ -291,43 +289,6 @@ function forceTick() {
         var link = $(linkId)[0];
         return link ? link.getTotalLength()/2 : linkDistance/2;
     });
-}
-
-/**
- * Function called when the drag start.
- * @param node
- */
-function nodeDragStart(node) {
-    // Stop the propagation to the parent. Allows to drag the node and not the entire graph.
-    d3.event.sourceEvent.stopPropagation();
-    node.fixed = true; // Fix the position of the node.
-    unselectLink();
-    selectNode(node);
-}
-
-/**
- * Function called when the drag end.
- */
-function nodeDragEnd() {
-    // Could be used to implement new behaviours.
-}
-
-/**
- * Function called when a node is double clicked.
- */
-function nodeDbClick() {
-    // Stop the zoom event when dbclick.
-    d3.event.stopPropagation();
-}
-
-/**
- * Function called when a link is clicked.
- * @param link object
- */
-function linkClick(link) {
-    d3.event.stopPropagation(); // Stop the event propagation to the svg container.
-    unselectNode();
-    selectLink(link);
 }
 
 /******************************************************************
@@ -374,12 +335,17 @@ function linkDefaultStyle(link) {
 
 /**
  * Adds a new node in the graph.
- * @param node object
+ * @param id int
+ * @param name string
+ * @param type string
+ * @param comment string
+ * @param graph_id string
  */
-function addNode(node) {
-    if(node == null) return;
-    dataset.nodes.push(node);
+function addNode(id, name, type, comment, graph_id) {
+    var newNode = {_id: id, name: name, type: type, comment: comment, graph_id: graph_id};
+    dataset.nodes.push(newNode);
     update();
+    return newNode;
 }
 
 /**
@@ -389,17 +355,23 @@ function addNode(node) {
  */
 function editNodeLabel(node, newLabel) {
     var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
+    var d3Node = getD3Node(node);
+    var d3Text =  d3Node.select("text");
+    d3Text.text(formattedLabel);
     node.name = newLabel;
-    d3.select(getDomNode(node)).select("text").text(formattedLabel);
+    var d3Rect = d3Node.select("rect");
+    var newWidth = d3Text.node().getBBox().width + 30;
+    d3Rect.attr('width', newWidth + "px");
+    d3Text.attr("x", newWidth/2);
 }
 
 /**
- * Updates the position of the given node.
+ * Updates the position of the given node from the dataset.
  * @param node object
  * @param x int
  * @param y int
  */
-function updateNodePosition(node, x, y) {
+function setNodePosition(node, x, y) {
     if(node.fixed) {
         node.x = x;
         node.y = y;
@@ -407,6 +379,14 @@ function updateNodePosition(node, x, y) {
         node.py = y;
         update();
     }
+}
+
+/**
+ * Uses the force layout to control the position of the node.
+ */
+function freeNodePosition(node) {
+    node.fixed = false;
+    update();
 }
 
 /**
@@ -418,7 +398,9 @@ function removeNode(node) {
     if(index >= 0) {
         dataset.nodes.splice(index, 1);
         update();
+        return true;
     }
+    return false;
 }
 
 /**
@@ -456,7 +438,7 @@ function getDomNode(node) {
 }
 
 /**
- * Selects the given node in the graph.
+ * Selects the given node from the dataset in the graph.
  * @param node object
  */
 function selectNode(node) {
@@ -492,7 +474,9 @@ function addLink(id, nodeSource, nodeTarget, label, type, graphId) {
         var newLink = {_id: id, source: iSource, target: iTarget, label: label, type: type, graph_id: graphId};
         dataset.links.push(newLink);
         update();
+        return newLink;
     }
+    return false;
 }
 
 /**
@@ -534,7 +518,7 @@ function removeLink(link) {
 }
 
 /**
- * Finds a link by ID.
+ * Finds a link by ID in the dataset.
  * @param id int
  * @returns object
  */
@@ -568,7 +552,7 @@ function getDomLink(link) {
 }
 
 /**
- * Selects the given link.
+ * Selects the given link from the dataset.
  * @param link object
  */
 function selectLink(link) {
@@ -599,7 +583,8 @@ export {
 
     addNode,
     editNodeLabel,
-    updateNodePosition,
+    setNodePosition,
+    freeNodePosition,
     removeNode,
     getNodeById,
     getD3Node,
@@ -617,6 +602,3 @@ export {
     selectLink,
     unselectLink,
 }
-
-
-

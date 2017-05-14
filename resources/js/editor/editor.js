@@ -1,5 +1,5 @@
 /**
- * Module principal de l'éditeur de carte conceptuelles.
+ * Main module.
  */
 
 import $ from "jquery";
@@ -18,7 +18,7 @@ var writeAccess = false;
  * Initialisation du graphe avec les données de la BDD.
  */
 $(function () {
-    graphId = getGraphId();
+    setGraphId();
     setAccessLevel();
     $.get("/graph/get/" + graphId, function (graph) {
         Graph.fetchGraph(graph);
@@ -37,13 +37,13 @@ $(function () {
  ******************************************************************/
 
 /**
- * Retourne l'identifiant du graphe actuellement ouvert dans l'éditeur.
+ * Définit l'identifiant du graphe actuellement ouvert dans l'éditeur.
  * @returns int
  */
-function getGraphId() {
+function setGraphId() {
     var url = window.location.href;
     var split = url.split("/");
-    return split[split.length-1];
+    graphId = split[split.length-1];
 }
 
 /**

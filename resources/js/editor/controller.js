@@ -1,5 +1,5 @@
 /**
- * Module de gestion des contrôles utilisateur.
+ * Module managing the user's controls.
  */
 
 import $ from "jquery";
@@ -89,7 +89,7 @@ function updateLinkPanel(link) {
 }
 
 /**
- * Updates the menu.
+ * Updates the menu depending of the selected item.
  */
 function updateMenu() {
     updateLinkPanel(Graph.selectedLink);
@@ -108,19 +108,21 @@ function createNode() {
             return id == "concept-creator" ? "concept" : "object";
         }($(this).attr("id")),
         comment: "",
-        fixed: false,
+        fixed: 0,
+        x: 0,
+        y: 0,
         graph_id: Editor.graphId
     }, function (node) {
-        Graph.addNode(node);
-        Graph.selectNode(node);
+        var newNode = Graph.addNode(node._id, node.name, node.type, node.comment, node.graph_id);
+        Graph.selectNode(newNode);
         Graph.unselectLink();
-        addNodeEventListeners(node);
+        addNodeEventListeners(newNode);
         updateMenu();
     });
 }
 
 /**
- * Fonction appelée quand on valide les changements apportés à un noeud.
+ * Function called when a node is edited by the user.
  */
 function editNode() {
     Graph.editNodeLabel(Graph.selectedNode, nodeNameInput.val());
@@ -129,15 +131,20 @@ function editNode() {
 }
 
 /**
- * Fonction appelée quand on supprime un noeud.
+ * Function called when the user removes a node.
  */
 function removeNode() {
     var nodeToRemove = Graph.selectedNode;
+    var linksToDelete = [];
     if(nodeToRemove == null) return;
-
     $.each(Graph.dataset.links, function (i, link) {
-       if(link.source._id == nodeToRemove._id || link.target._id == nodeToRemove._id)
-           Networker.removeLink(link);
+       if(link.source._id == nodeToRemove._id || link.target._id == nodeToRemove._id) {
+            linksToDelete.push(link);
+       }
+    });
+    $.each(linksToDelete, function (i, link) {
+        Graph.removeLink(link);
+        Networker.removeLink(link);
     });
     Graph.unselectNode();
     Networker.removeNode(nodeToRemove);
@@ -145,10 +152,10 @@ function removeNode() {
     updateMenu();
 }
 
-// Links
+// LINKS
 
 /**
- * Fonction appelée quand on crée un nouveau lien.
+ * Function called when a link is created by the user.
  */
 function createLink() {
     resetLinkEdition();
@@ -169,7 +176,7 @@ function createLink() {
 }
 
 /**
- * Gère les création de liens.
+ * Manages the creation of the links.
  * @param linkEditionStatus object
  * @param node int
  */
@@ -188,17 +195,10 @@ function createLinkManager(linkEditionStatus, node) {
                     type: linkEditionStatus.type,
                     graph_id: Editor.graphId
                 }, function (link) {
-                    Graph.addLink(
-                        link._id,
-                        Graph.getNodeById(link.source),
-                        Graph.getNodeById(link.target),
-                        link.label,
-                        link.type,
-                        link.graph_id
-                    );
-                    Graph.selectLink(link);
+                    var newLink = Graph.addLink(link._id, Graph.getNodeById(link.source), Graph.getNodeById(link.target), link.label, link.type, link.graph_id);
+                    Graph.selectLink(newLink);
                     Graph.unselectNode();
-                    addLinkEventListeners(link);
+                    addLinkEventListeners(newLink);
                     updateMenu();
                 });
             } else {
@@ -212,7 +212,7 @@ function createLinkManager(linkEditionStatus, node) {
 }
 
 /**
- * Réinitialise l'état d'édition d'un lien.
+ * Reinitialises the link edition status object state.
  */
 function resetLinkEdition() {
     linkEditionStatus.source = null;
@@ -223,23 +223,22 @@ function resetLinkEdition() {
 }
 
 /**
- * Fonction appelée quand on valide les changements apportés à un lien.
+ * Function called when the user accepts the link modification.
  */
 function editLink() {
     Graph.editLinkLabel(Graph.selectedLink, linkLabelInput.val());
 }
 
 /**
- * Fonction appelée quand on modifie le type d'un lien.
+ * Function called when user changes the link type of the selected link.
  */
 function changeLinkType() {
-    var link = Graph.getLinkById(Graph.selectedLink);
+    var link = Graph.selectedLink;
     if(!isLinkTypeCompatible(link.source, link.target, $(this).val())) {
         alert("Contrainte de liaison.");
         $(this).val(link.type);
         return;
     }
-
     link.type = $(this).val();
     Graph.getD3Link(Graph.selectedLink).style("stroke-dasharray", function () {
         switch (link.type) {
@@ -252,7 +251,7 @@ function changeLinkType() {
 }
 
 /**
- * Fonction appelée quand on veut supprimer un lien.
+ * Function called when the user wants to remove a link.
  */
 function removeLink() {
     var linkToDelete = Graph.selectedLink;
@@ -267,63 +266,78 @@ function removeLink() {
  *** EVENTS                                                     ***
  ******************************************************************/
 
-// Menu général
-svgContainer.mousedown(updateMenu);
+// General
+svgContainer.mousedown(function () {
+    Graph.unselectLink();
+    Graph.unselectNode();
+    updateMenu();
+});
 svgContainer.click(resetLinkEdition);
 
-// Menu création
+// CREATION menu
 nodeCreatorButton.click(createNode);
 linkCreatorButton.click(createLink);
 
-// Menu noeud
+// NODE menu
 deleteNodeButton.click(removeNode);
 validateNodeButton.click(editNode);
 
-// Menu lien
+// LINK menu
 linkTypeSelection.change(changeLinkType);
 deleteLinkButton.click(removeLink);
 validateLinkButton.click(editLink);
 
 /**
- * Ajoute tous les event listeners liés à un noeud.
- * Cette fonction doit être utilisée quand un nouveau noeud est créé.
+ * Ads all the event listeners required for a node from the dataset.
  * @param node object
  */
 function addNodeEventListeners(node) {
-    var nodeDom = $(Graph.getDomNode(node));
-    nodeDom.click(function () {
+    var domNode = $(Graph.getDomNode(node));
+    domNode.mousedown(function (e) {
+        e.stopPropagation();
+        node.fixed = true; // Fix the position of the node.
+        Graph.unselectLink();
+        Graph.selectNode(node);
         updateMenu();
-        createLinkManager(linkEditionStatus, Graph.selectedNode);
     });
-    nodeDom.mouseup(function () {
-        Networker.updateNode(Graph.selectedNode);
+    domNode.mouseup(function () {
+        Networker.updateNode(node);
     });
-    nodeDom.dblclick(function () {
-        Graph.selectedNode.fixed = false;
-        Networker.updateNode(Graph.selectedNode);
+    domNode.click(function (e) {
+        e.stopPropagation();
+        createLinkManager(linkEditionStatus, node);
+    });
+    domNode.dblclick(function (e) {
+        e.stopPropagation();
+        Graph.freeNodePosition(node);
+        Networker.updateNode(node);
         Graph.unselectNode();
     });
 }
 
 /**
- * Ajoute tous les event listeners liés à un lien.
- * Cette fonction doit être utilisée quand un nouveau lien est créé.
+ * Adds all the event listeners required for a link.
  * @param link object
  */
 function addLinkEventListeners(link) {
-    var linkDom = $("#link-label-" + link._id);
-    linkDom.click(updateMenu);
+    var domLink = $("#link-label-" + link._id);
+    domLink.mousedown(function (e) {
+        e.stopPropagation();
+        Graph.unselectNode();
+        Graph.selectLink(link);
+        updateMenu();
+    });
 }
 
-// Raccourcis clavier
+// Keyboard shortcuts
 $(window).keyup(function (e) {
     switch (e.keyCode) {
-        // Bouton DELETE
+        // DELETE button
         case 46 :
             if(nodeMenu.is(":visible")) removeNode();
             if(linkMenu.is(":visible")) removeLink();
             break;
-        // Bouton ENTRER
+        // ENTER button
         case 13 :
             if(nodeMenu.is(":visible")) editNode();
             if(linkMenu.is(":visible")) editLink();
@@ -336,8 +350,7 @@ $(window).keyup(function (e) {
  ******************************************************************/
 
 /**
- * Détermine les contraintes de liaison entre un lien et 2 noeuds au niveau de leur type.
- * Retourne true si la création est possible, false sinon.
+ * Returns true is the creation of <linkType> link is possible between <nodeSource> and <nodeTarget>.
  * @param nodeSource node
  * @param nodeTarget node
  * @param linkType string

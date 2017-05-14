@@ -1,5 +1,5 @@
 /**
- * Module de gestion des accès réseau.
+ * Module managing the network access for web sockets specially.
  */
 
 import * as Graph from "./graph";
@@ -10,11 +10,11 @@ var serverUrl = "http://localhost:8080";
 var socket = require('socket.io-client')(serverUrl);
 
 /******************************************************************
- *** ENVOI                                                      ***
+ *** SENDING                                                    ***
  ******************************************************************/
 
 /**
- * Envoie un noeud au serveur pour l'ajouter en BDD et renvoie le noeud ajouté en paramètre dans la callback donnée.
+ * Sends a node to the server to save and share it.
  * @param node object
  * @param callback function
  */
@@ -27,7 +27,7 @@ function addNode(node, callback) {
 }
 
 /**
- * Demande au serveur de supprimer en BDD le noeud passé.
+ * Sends a node to the server to delete it.
  * @param node object
  */
 function removeNode(node) {
@@ -36,7 +36,7 @@ function removeNode(node) {
 }
 
 /**
- * Met à jour un noeud en BDD.
+ * Sends a node to the server to update the modification and share it.
  * @param node object
  */
 function updateNode(node) {
@@ -45,7 +45,7 @@ function updateNode(node) {
 }
 
 /**
- * Demande au serveur d'ajouter un lien en BDD.
+ * Sends a link to the server to save and share it.
  * @param link object
  * @param callback function
  */
@@ -58,7 +58,7 @@ function addLink(link, callback) {
 }
 
 /**
- * Demande au serveur de supprimer un lien en BDD.
+ * Sends a link to the server to delete it.
  */
 function removeLink(link) {
     if(Editor.writeAccess && link != null)
@@ -66,23 +66,23 @@ function removeLink(link) {
 }
 
 /******************************************************************
- *** RECEPTION                                                  ***
+ *** RECEIVING                                                  ***
  ******************************************************************/
 
 /**
- * Ajoute un nouveau noeud venant du serveur au graphe.
+ * Adds a new node from the server in the local graph.
  */
 socket.on("node/added", function (node) {
     if(node.graph_id != Editor.graphId) return;
     if(Graph.getNodeById(node._id) == null) {
-        Graph.addNode(node);
-        Controller.addNodeEventListeners(node);
+        var newNode = Graph.addNode(node._id, node.name, node.type, node.comment, node.graph_id);
+        Controller.addNodeEventListeners(newNode);
         console.log("NODE " + node._id + " ADDED");
     }
 });
 
 /**
- * Met à jour un noeud sur ordre du serveur.
+ * Updates the local version of the node received from the server.
  */
 socket.on("node/updated", function (node) {
     if(node.graph_id != Editor.graphId) return;
@@ -92,12 +92,13 @@ socket.on("node/updated", function (node) {
         nodeToUpdate.type = node.type;
         nodeToUpdate.comment = node.comment;
         Graph.editNodeLabel(nodeToUpdate, node.name);
-        Graph.updateNodePosition(nodeToUpdate, node.x, node.y);
+        Graph.setNodePosition(nodeToUpdate, node.x, node.y);
+        console.log("NODE " + node._id + " UPDATED");
     }
 });
 
 /**
- * Supprime un noeud sur ordre du serveur.
+ * Removes the local version of the received node from the server.
  */
 socket.on("node/removed", function (node) {
     if(node.graph_id != Editor.graphId) return;
@@ -109,19 +110,19 @@ socket.on("node/removed", function (node) {
 });
 
 /**
- * Ajoute un nouveau lien entre 2 noeuds sur ordre du serveur.
+ * Adds a new link in the local graph received from the server.
  */
 socket.on("link/added", function (link) {
     if(link.graph_id != Editor.graphId) return;
     if(Graph.getLinkById(link._id) == null) {
-        Graph.addLink(link._id, Graph.getNodeById(link.source), Graph.getNodeById(link.target), link.label, link.type, link.graph_id);
-        Controller.addLinkEventListeners(link);
+        var newLink = Graph.addLink(link._id, Graph.getNodeById(link.source), Graph.getNodeById(link.target), link.label, link.type, link.graph_id);
+        Controller.addLinkEventListeners(newLink);
         console.log("LINK " + link._id + " ADDED");
     }
 });
 
 /**
- * Delete a link on order of the server.
+ * Removes the local version of the received link from the server.
  */
 socket.on("link/removed", function (link) {
     if(link.graph_id != Editor.graphId) return;
