@@ -28,6 +28,7 @@ var linkTypeSelection = $("#menu-link-link-type");
 var deleteLinkButton = $("#menu-link-delete");
 var validateLinkButton = $("#menu-link-validate");
 
+// Object representing the status of the edition of a new link.
 var linkEditionStatus = {
     type: "",
     source: null,
@@ -108,7 +109,7 @@ function createNode() {
             return id == "concept-creator" ? "concept" : "object";
         }($(this).attr("id")),
         comment: "",
-        fixed: 0,
+        fixed: false,
         x: 0,
         y: 0,
         graph_id: Editor.graphId
@@ -178,7 +179,7 @@ function createLink() {
 /**
  * Manages the creation of the links.
  * @param linkEditionStatus object
- * @param node int
+ * @param node object
  */
 function createLinkManager(linkEditionStatus, node) {
     if(linkEditionStatus.enable) {
@@ -257,8 +258,8 @@ function removeLink() {
     var linkToDelete = Graph.selectedLink;
     if(linkToDelete == null) return;
     Graph.unselectLink();
-    Networker.removeLink(linkToDelete);
     Graph.removeLink(linkToDelete);
+    Networker.removeLink(linkToDelete);
     updateMenu();
 }
 
@@ -266,7 +267,7 @@ function removeLink() {
  *** EVENTS                                                     ***
  ******************************************************************/
 
-// General
+// General behaviours
 svgContainer.mousedown(function () {
     Graph.unselectLink();
     Graph.unselectNode();
@@ -274,21 +275,21 @@ svgContainer.mousedown(function () {
 });
 svgContainer.click(resetLinkEdition);
 
-// CREATION menu
+// CREATION MENU
 nodeCreatorButton.click(createNode);
 linkCreatorButton.click(createLink);
 
-// NODE menu
+// NODE MENU
 deleteNodeButton.click(removeNode);
 validateNodeButton.click(editNode);
 
-// LINK menu
+// LINK MENU
 linkTypeSelection.change(changeLinkType);
 deleteLinkButton.click(removeLink);
 validateLinkButton.click(editLink);
 
 /**
- * Ads all the event listeners required for a node from the dataset.
+ * Adds all the event listeners required for a node from the dataset.
  * @param node object
  */
 function addNodeEventListeners(node) {

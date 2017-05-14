@@ -33,31 +33,17 @@ var dataset = {
 };
 
 /**
- * Allows to import some graph data and update the display.
+ * Allows to import a graph dataset and update the display.
  * @param graph object
  */
 function fetchGraph(graph) {
     $.each(graph.nodes, function (i, node) {
-        dataset.nodes.push({
-            _id: node._id,
-            name: node.name,
-            type: node.type,
-            comment: node.comment,
-            fixed: node.fixed,
-            x: node.x,
-            y: node.y,
-            graph_id: node.graph_id
-        });
+        var newNode = addNode(node._id, node.name, node.type, node.comment, node.graph_id);
+        newNode.fixed = node.fixed;
+        setNodePosition(newNode, node.x, node.y);
     });
     $.each(graph.links, function (i, link) {
-        dataset.links.push({
-            _id: link._id,
-            source: getNodeById(link.source),
-            target: getNodeById(link.target),
-            label: link.label,
-            type: link.type,
-            graph_id: link.graph_id
-        });
+        addLink(link._id, getNodeById(link.source), getNodeById(link.target), link.label, link.type, link.graph_id);
     });
     update();
 }
@@ -123,10 +109,8 @@ function update() {
         .enter()
         .append('path')
         .attr({
-            'd': function (d) { return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y + 'Z' },
+            'd': function (d) { return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y },
             'class': 'link',
-            'fill-opacity': 1,
-            'stroke-opacity': 1,
             'fill': '#000000',
             'stroke': '#000000',
             'id': function (d) { return 'link-' + d._id },
@@ -151,7 +135,7 @@ function update() {
             'id': function (d) { return 'link-label-' + d._id },
             'dx': linkDistance / 2,
             'dy': -10,
-            'font-size': 13,
+            'font-size': 14,
             'fill': '#000000',
             "text-anchor": "middle"
         });
@@ -160,13 +144,15 @@ function update() {
         .attr('xlink:href', function (d) { return '#link-' + d._id })
         .text(function (d) { return d.label; });
 
-    // Makes the cards (nodes).
+    // Creates the cards (nodes).
     nodes = svg.selectAll(".node")
         .data(dataset.nodes, function (d) { return d._id; })
         .enter()
         .append("g")
-        .attr("class", "node")
-        .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
+        .attr({
+            "class": "node",
+            "transform": function (d) { return "translate(" + d.x + "," + d.y + ")"; }
+        })
         .call(force.drag);
     nodes
         .append("rect")
@@ -189,8 +175,8 @@ function update() {
         })
         .text(function (d) { return d.type == "concept" ? "< " + d.name + " >" : d.name; });
     nodes
-        .attr('x', function (d) {
-           editNodeLabel(d, d.name);
+        .each(function (d) {
+            editNodeLabel(d, d.name);
         });
 
     // Updates the references after creation.
@@ -242,27 +228,27 @@ $(window).resize(function() {
  * Function called when the graph change (deplacement, force...).
  */
 function forceTick() {
-    // Updates the node position.
+    // Updates the node's position.
     nodes.attr("transform", function (d) {
         return "translate(" + d.x + "," + d.y + ")";
     });
 
     // Updates the link's position.
     links.attr('d', function (d) {
-        // Find the intersection between the link and the node.
+        // Gets the dimension of the target and the source node.
         var sourceBox = getD3Node(d.source).select("rect").node().getBBox();
         var targetBox = getD3Node(d.target).select("rect").node().getBBox();
-
+        // Finds the intersection between the link and the source and target node.
         var line = shape("line", {
             x1: (d.source.x + sourceBox.width / 2),
             y1: (d.source.y + sourceBox.height / 2),
             x2: (d.target.x + targetBox.width / 2),
             y2: (d.target.y + targetBox.height / 2)
         });
-        var rect_source = shape("rect", {x: d.source.x, y: d.source.y, width: sourceBox.width, height: sourceBox.height});
-        var rect_target = shape("rect", {x: d.target.x, y: d.target.y, width: targetBox.width, height: targetBox.height});
-        var source = intersect(rect_source, line);
-        var target = intersect(rect_target, line);
+        var sourceRect = shape("rect", {x: d.source.x, y: d.source.y, width: sourceBox.width, height: sourceBox.height});
+        var targetRect = shape("rect", {x: d.target.x, y: d.target.y, width: targetBox.width, height: targetBox.height});
+        var source = intersect(sourceRect, line);
+        var target = intersect(targetRect, line);
 
         if (target.points.length > 0 && source.points.length > 0) {
             return 'M ' + source.points[0].x + ' ' + source.points[0].y + ' L ' + target.points[0].x + ' ' + target.points[0].y;
@@ -271,7 +257,7 @@ function forceTick() {
         }
     });
 
-    // Updates the link's labels position.
+    // Rotates the link's label to make the reading easier.
     linkLabels.attr('transform', function (d) {
         if (d.target.x < d.source.x) {
             var bbox = this.getBBox();
@@ -283,7 +269,7 @@ function forceTick() {
         }
     });
 
-    // Centers the link's labels.
+    // Centers the link's label.
     linkLabels.attr("dx", function () {
         var linkId = d3.select(this).select("textPath").attr("xlink:href");
         var link = $(linkId)[0];
@@ -350,6 +336,7 @@ function addNode(id, name, type, comment, graph_id) {
 
 /**
  * Modifies the label of a link.
+ * Adapts the width of the node corresponding to the size of the text.
  * @param node object
  * @param newLabel string
  */
@@ -357,9 +344,9 @@ function editNodeLabel(node, newLabel) {
     var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
     var d3Node = getD3Node(node);
     var d3Text =  d3Node.select("text");
+    var d3Rect = d3Node.select("rect");
     d3Text.text(formattedLabel);
     node.name = newLabel;
-    var d3Rect = d3Node.select("rect");
     var newWidth = d3Text.node().getBBox().width + 30;
     d3Rect.attr('width', newWidth + "px");
     d3Text.attr("x", newWidth/2);
@@ -367,6 +354,7 @@ function editNodeLabel(node, newLabel) {
 
 /**
  * Updates the position of the given node from the dataset.
+ * The node must be fixed.
  * @param node object
  * @param x int
  * @param y int
@@ -382,7 +370,7 @@ function setNodePosition(node, x, y) {
 }
 
 /**
- * Uses the force layout to control the position of the node.
+ * Uses the force layout to control the position of the given node.
  */
 function freeNodePosition(node) {
     node.fixed = false;
@@ -392,6 +380,7 @@ function freeNodePosition(node) {
 /**
  * Deletes the given node in the graph.
  * @param node object
+ * @return {object, boolean}
  */
 function removeNode(node) {
     var index = dataset.nodes.indexOf(node);
@@ -404,7 +393,7 @@ function removeNode(node) {
 }
 
 /**
- * Finds a node by ID.
+ * Finds a node by ID in the dataset.
  * @param id int
  * @returns object
  */
@@ -438,7 +427,7 @@ function getDomNode(node) {
 }
 
 /**
- * Selects the given node from the dataset in the graph.
+ * Selects the given node from the dataset.
  * @param node object
  */
 function selectNode(node) {
@@ -466,6 +455,7 @@ function unselectNode() {
  * @param label string
  * @param type string
  * @param graphId string
+ * @return {boolean, object}
  */
 function addLink(id, nodeSource, nodeTarget, label, type, graphId) {
     var iSource = dataset.nodes.indexOf(nodeSource);
@@ -483,6 +473,7 @@ function addLink(id, nodeSource, nodeTarget, label, type, graphId) {
  * Finds a link with a source node and a target node.
  * @param nodeSource object
  * @param nodeTarget object
+ * @return object
  */
 function findLink(nodeSource, nodeTarget) {
     var link = null;

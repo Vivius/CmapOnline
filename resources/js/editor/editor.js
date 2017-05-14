@@ -15,7 +15,7 @@ var writeAccess = false;
  ******************************************************************/
 
 /**
- * Initialisation du graphe avec les données de la BDD.
+ * Initializes the graph with the database and defines the write access.
  */
 $(function () {
     setGraphId();
@@ -37,8 +37,7 @@ $(function () {
  ******************************************************************/
 
 /**
- * Définit l'identifiant du graphe actuellement ouvert dans l'éditeur.
- * @returns int
+ * Finds the id of the current graph.
  */
 function setGraphId() {
     var url = window.location.href;
@@ -47,8 +46,7 @@ function setGraphId() {
 }
 
 /**
- * Définit si le graphe est ouvert en mode lecture ou écriture.
- * @returns
+ * Defines the write access of the graph for the current user.
  */
 function setAccessLevel() {
     var url = window.location.href;
