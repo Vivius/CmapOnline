@@ -7,7 +7,7 @@ var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require('bcrypt-nodejs');
 var favicon = require('serve-favicon');
 
-var DB = "mongodb://localhost/CmapDb";
+var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
 Mongo.connect(DB, function(error, db) {
@@ -33,7 +33,10 @@ app.use(Session({
     secret: 'moijecomprendspasacounamatata',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false },
+    cookie: {
+        secure: false,
+        maxAge: new Date(Date.now() + (24 * 60 * 60 * 1000))
+    },
     store: new MongoStore({ url: DB})
 }));
 
@@ -57,8 +60,12 @@ app.use(function (req, res, next) {
  * Affichage de la page login
  */
 app.get('/', function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/login.html');
+    if(typeof req.session.user != 'undefined')
+        res.redirect('/home');
+    else {
+        res.setHeader('Content-Type', 'text/html');
+        res.sendFile(__dirname + '/html/login.html');
+    }
 });
 
 /**
@@ -201,6 +208,64 @@ app.get("/graph/get/:id", function (req, res) {
     });
 });
 
+
+/**
+ * Parse un graphe au format voulu pour l'export
+ */
+app.get("/graph/parse/:id", function (req, res) {
+    var id = req.params["id"];
+    Mongo.connect(DB, function (error, db) {
+        db.collection("nodes").find({graph_id: id}).toArray(function (err, nodes) {
+            db.collection("links").find({graph_id: id}).toArray(function (err, links) {
+                db.collection("graphs").find({_id: new ObjectId(id)}).toArray(function (err, graph) {
+                    // Format désiré du graphe pour l'export
+                    var format = {
+                        graph: {
+                            name: graph[0].name,
+                            description: "",
+                            directed: true,
+                            metadata: [
+
+                            ],
+                            nodes: nodes,
+                            links: links
+                        }
+                    };
+
+                    // Suppression des données inutiles dans les nodes
+                    format.graph.nodes.forEach(function (node) {
+                        node.id = node._id;
+                        node.label = node.name;
+
+                        if(node.type == "object") node.type = "instance";
+
+                        delete node._id;
+                        delete node.name;
+                        delete node.comment;
+                        delete node.fixed;
+                        delete node.graph_id;
+                        delete node.x;
+                        delete node.y;
+                    })
+
+                    // Suppression des données inutiles dans les links
+                    format.graph.links.forEach(function (link) {
+                        if(link.type == "ako") link.type = "subconcept-of";
+                        if(link.type == "instance of") {
+                            link.type = "instance-of";
+                            link.label = "io";
+                        }
+
+                        delete link._id;
+                        delete link.graph_id;
+                    })
+
+                    res.json(format);
+                });
+            });
+        });
+    });
+});
 
 /**
  * Retourne la liste de tous les graphes.

@@ -185,6 +185,16 @@ html {
           }
         }
       }
+
+      #home-button {
+        position: absolute;
+        top: 0px;
+
+        button {
+          font-size: 25px;
+          padding: 5px 15px;
+        }
+      }
     }
   }
 }
