@@ -10,8 +10,8 @@ var favicon = require('serve-favicon');
 var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
-Mongo.connect(DB, function(error, db) {
-    if(error) {
+Mongo.connect(DB, function (error, db) {
+    if (error) {
         console.log("ERREUR - Impossible de se conencter à MongoDB");
         throw error;
     }
@@ -20,12 +20,12 @@ Mongo.connect(DB, function(error, db) {
 
 // Configuration du framework express.
 var app = Express();
-app.use("/css",Express.static(__dirname + '/css'));
-app.use("/images",Express.static(__dirname + '/images'));
-app.use("/js",Express.static(__dirname + '/js'));
-app.use("/html",Express.static(__dirname + '/html'));
+app.use("/css", Express.static(__dirname + '/css'));
+app.use("/images", Express.static(__dirname + '/images'));
+app.use("/js", Express.static(__dirname + '/js'));
+app.use("/html", Express.static(__dirname + '/html'));
 app.use(BodyParser.json());
-app.use(BodyParser.urlencoded({ extended: true }));
+app.use(BodyParser.urlencoded({extended: true}));
 app.use(favicon(__dirname + '/images/favicon/favicon.ico'));
 
 // Initialisation de la session.
@@ -37,20 +37,16 @@ app.use(Session({
         secure: false,
         maxAge: new Date(Date.now() + (24 * 60 * 60 * 1000))
     },
-    store: new MongoStore({ url: DB})
+    store: new MongoStore({url: DB})
 }));
 
 // Middleware authentification
 app.use(function (req, res, next) {
-    if(!req.session.user && req.path !== "/" && req.path !== "/login" && req.path !== "/signup") {
+    if (!req.session.user && req.path !== "/" && req.path !== "/login" && req.path !== "/signup") {
         return res.redirect('/');
     }
     next();
 });
-
-//------------------------------------------------------------
-// HELPERSS
-//------------------------------------------------------------
 
 //------------------------------------------------------------
 // ROUTES
@@ -60,7 +56,7 @@ app.use(function (req, res, next) {
  * Affichage de la page login
  */
 app.get('/', function (req, res) {
-    if(typeof req.session.user != 'undefined')
+    if (typeof req.session.user != 'undefined')
         res.redirect('/home');
     else {
         res.setHeader('Content-Type', 'text/html');
@@ -71,10 +67,10 @@ app.get('/', function (req, res) {
 /**
  * Login
  */
-app.post("/login", function (req,res) {
+app.post("/login", function (req, res) {
     Mongo.connect(DB, function (error, db) {
-        db.collection("users").find({mail: req.body.mail}).toArray(function(err, documents) {
-            if(documents[0] != null && Bcrypt.compareSync(req.body.password, documents[0].password)) {
+        db.collection("users").find({mail: req.body.mail}).toArray(function (err, documents) {
+            if (documents[0] != null && Bcrypt.compareSync(req.body.password, documents[0].password)) {
                 req.session.user = documents[0];
                 res.json(true);
             } else
@@ -86,7 +82,7 @@ app.post("/login", function (req,res) {
 /**
  * Logout
  */
-app.post("/logout", function (req,res) {
+app.post("/logout", function (req, res) {
     req.session.destroy();
     res.redirect('/');
 });
@@ -94,10 +90,10 @@ app.post("/logout", function (req,res) {
 /**
  * Insertion d'un utilisateur
  */
-app.post("/signup", function (req,res) {
-    Mongo.connect(DB, function (error, db){
-        db.collection("users").find({mail: req.body.mail}).toArray(function(err, documents) {
-            if(typeof documents[0] != 'undefined') res.json(false);
+app.post("/signup", function (req, res) {
+    Mongo.connect(DB, function (error, db) {
+        db.collection("users").find({mail: req.body.mail}).toArray(function (err, documents) {
+            if (typeof documents[0] != 'undefined') res.json(false);
             else {
                 var salt = Bcrypt.genSaltSync(10);
                 var hash = Bcrypt.hashSync(req.body.password, salt);
@@ -114,7 +110,7 @@ app.post("/signup", function (req,res) {
 /**
  * Récupérer l'utilisateur courant
  */
-app.get('/user/current' , function(req, res) {
+app.get('/user/current', function (req, res) {
     res.json(req.session.user);
 });
 
@@ -122,38 +118,36 @@ app.get('/user/current' , function(req, res) {
  * Retourne les access du graph
  */
 app.post("/graph/getAccess", function (req, res) {
-
-    Mongo.connect(DB).then(function(db) {
-
-        var graphs = new Promise(function(resolve){
+    Mongo.connect(DB).then(function (db) {
+        var graphs = new Promise(function (resolve) {
             var usr = req.session.user;
             var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}]};
-            var projection = {read:1, write:1, _id:0};
+            var projection = {read: 1, write: 1, _id: 0};
             var cursor = db.collection('graphs').find(query).project(projection);
-            cursor.toArray(function(err, documents) {
+            cursor.toArray(function (err, documents) {
                 resolve(documents);
             });
         });
 
-        var users = new Promise(function(resolve){
+        var users = new Promise(function (resolve) {
             resolve(db.collection("users").find().toArray());
         });
 
-        Promise.all([graphs, users]).then(function(data)  {
+        Promise.all([graphs, users]).then(function (data) {
 
             graphs = data[0][0];
             users = data[1];
 
-            if(typeof graphs['read'] !== 'undefined') {
+            if (typeof graphs['read'] !== 'undefined') {
                 for (var i = 0; i < graphs['read'].length; i++) {
                     for (var j = 0; j < users.length; j++) {
-                        if(graphs['read'][i]['id'] ==  users [j]['_id']){
+                        if (graphs['read'][i]['id'] == users [j]['_id']) {
                             graphs['read'][i] = users [j];
                         }
                     }
                 }
             }
-            if(typeof graphs['write'] !== 'undefined') {
+            if (typeof graphs['write'] !== 'undefined') {
                 for (i = 0; i < graphs['write'].length; i++) {
                     for (j = 0; j < users.length; j++) {
                         if (graphs['write'][i]['id'] == users [j]['_id']) {
@@ -172,7 +166,7 @@ app.post("/graph/getAccess", function (req, res) {
 /**
  * Affichage de la homepage.
  */
-app.get('/home', function(req, res) {
+app.get('/home', function (req, res) {
     res.setHeader('Content-Type', 'text/html');
     res.sendFile(__dirname + '/html/home.html');
 });
@@ -195,16 +189,15 @@ app.get("/view/:id", function (req, res) {
 
 /**
  * Retourne un graphe entier grâce à son identifiant.
- * TODO : aller chercher en base le graphe demandé avec l'ensemble des ses liens et noeuds.
  */
 app.get("/graph/get/:id", function (req, res) {
     var id = req.params["id"];
     Mongo.connect(DB, function (error, db) {
-       db.collection("nodes").find({graph_id: id}).toArray(function (err, nodes) {
-           db.collection("links").find({graph_id: id}).toArray(function (err, links) {
-               res.json({nodes: nodes, links: links});
-           });
-       });
+        db.collection("nodes").find({graph_id: id}).toArray(function (err, nodes) {
+            db.collection("links").find({graph_id: id}).toArray(function (err, links) {
+                res.json({nodes: nodes, links: links});
+            });
+        });
     });
 });
 
@@ -224,9 +217,7 @@ app.get("/graph/parse/:id", function (req, res) {
                             name: graph[0].name,
                             description: "",
                             directed: true,
-                            metadata: [
-
-                            ],
+                            metadata: [],
                             nodes: nodes,
                             links: links
                         }
@@ -236,9 +227,7 @@ app.get("/graph/parse/:id", function (req, res) {
                     format.graph.nodes.forEach(function (node) {
                         node.id = node._id;
                         node.label = node.name;
-
-                        if(node.type == "object") node.type = "instance";
-
+                        if (node.type == "object") node.type = "instance";
                         delete node._id;
                         delete node.name;
                         delete node.comment;
@@ -246,19 +235,18 @@ app.get("/graph/parse/:id", function (req, res) {
                         delete node.graph_id;
                         delete node.x;
                         delete node.y;
-                    })
+                    });
 
                     // Suppression des données inutiles dans les links
                     format.graph.links.forEach(function (link) {
-                        if(link.type == "ako") link.type = "subconcept-of";
-                        if(link.type == "instance of") {
+                        if (link.type == "ako") link.type = "subconcept-of";
+                        if (link.type == "instance of") {
                             link.type = "instance-of";
                             link.label = "io";
                         }
-
                         delete link._id;
                         delete link.graph_id;
-                    })
+                    });
 
                     res.json(format);
                 });
@@ -271,24 +259,24 @@ app.get("/graph/parse/:id", function (req, res) {
  * Retourne la liste de tous les graphes.
  */
 app.get("/graph/getAll", function (req, res) {
-    Mongo.connect(DB).then(function(db) {
+    Mongo.connect(DB).then(function (db) {
 
-        var graphs = new Promise(function(resolve){
+        var graphs = new Promise(function (resolve) {
             var usr = req.session.user;
-            var query = {$or: [{owner: usr._id}, {read:{id: usr._id}}, {write:{id: usr._id}}] };
+            var query = {$or: [{owner: usr._id}, {read: {id: usr._id}}, {write: {id: usr._id}}]};
             resolve(db.collection("graphs").find(query).toArray());
         });
 
-        var users = new Promise(function(resolve){
+        var users = new Promise(function (resolve) {
             resolve(db.collection("users").find().toArray());
         });
 
-        Promise.all([graphs, users]).then(function(data)  {
+        Promise.all([graphs, users]).then(function (data) {
             graphs = data[0];
             users = data[1];
             for (var i = 0; i < graphs.length; i++) {
                 for (var j = 0; j < users.length; j++) {
-                    if(graphs[i]['owner'] ==  users [j]['_id']){
+                    if (graphs[i]['owner'] == users [j]['_id']) {
                         graphs[i]['owner'] = users [j];
                     }
                 }
@@ -302,9 +290,9 @@ app.get("/graph/getAll", function (req, res) {
 /**
  * Permet de créer un nouveau graphe.
  */
-app.post("/graph/create", function (req,res) {
-    req.body["date"] =  Date.now();
-    Mongo.connect(DB, function(error, db) {
+app.post("/graph/create", function (req, res) {
+    req.body["date"] = Date.now();
+    Mongo.connect(DB, function (error, db) {
         db.collection("graphs").insert(req.body, null, function (error, results) {
             res.json(results.ops[0]);
         });
@@ -315,25 +303,27 @@ app.post("/graph/create", function (req,res) {
 /**
  * Permet d'ajouter un acces en écriture ou en lecture à un utilisateur (ID)
  */
-app.post("/graph/addAccess", function (req,res) {
+app.post("/graph/addAccess", function (req, res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
-            var query = {$and : [
-                                    {_id: new ObjectId(req.body['graphID'])},
-                                    { $nor: [
-                                        {read : { id: req.body['userID']}},
-                                        {write : { id: req.body['userID'] } }
-                                        ]
-                                    }
-                                ]
-                        } ;
+            var query = {
+                $and: [
+                    {_id: new ObjectId(req.body['graphID'])},
+                    {
+                        $nor: [
+                            {read: {id: req.body['userID']}},
+                            {write: {id: req.body['userID']}}
+                        ]
+                    }
+                ]
+            };
 
-            if(req.body['access'] == 'read'){
-                graphs.update(query,{$push: { read:{ id: req.body['userID']} } }, { upsert: true });
+            if (req.body['access'] == 'read') {
+                graphs.update(query, {$push: {read: {id: req.body['userID']}}}, {upsert: true});
                 res.end();
             }
-            else{
-                graphs.update(query,{$push: { write:{ id: req.body['userID']} } }, { upsert: true });
+            else {
+                graphs.update(query, {$push: {write: {id: req.body['userID']}}}, {upsert: true});
                 res.end();
             }
         });
@@ -343,20 +333,20 @@ app.post("/graph/addAccess", function (req,res) {
 /**
  * Permet de changer un acces d'écriture en lecture ou de lecture en écriture
  */
-app.post("/graph/changeAccess", function (req,res) {
+app.post("/graph/changeAccess", function (req, res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
             var usr = req.session.user;
-            var query ={$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}] };
+            var query = {$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}]};
 
-            if(req.body['typeAccess'] == 'read') {
+            if (req.body['typeAccess'] == 'read') {
                 graphs.update(query, {$pull: {write: {id: req.body['userID']}}});
-                graphs.update(query, {$push: {read:  {id: req.body['userID']}}});
+                graphs.update(query, {$push: {read: {id: req.body['userID']}}});
                 res.end();
             }
-            else{
+            else {
                 graphs.update(query, {$pull: {read: {id: req.body['userID']}}});
-                graphs.update(query, {$push: {write:{id: req.body['userID']}}});
+                graphs.update(query, {$push: {write: {id: req.body['userID']}}});
                 res.end();
             }
         });
@@ -366,17 +356,17 @@ app.post("/graph/changeAccess", function (req,res) {
 /**
  * Permet de supprimer un acces en écriture ou en lecture à un utilisateur (ID)
  */
-app.post("/graph/deleteAccess", function (req,res) {
+app.post("/graph/deleteAccess", function (req, res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
             var usr = req.session.user;
-            var query ={$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}] };
+            var query = {$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}]};
 
-            if(req.body['typeAccess'] == 'read') {
+            if (req.body['typeAccess'] == 'read') {
                 graphs.update(query, {$pull: {read: {id: req.body['userID']}}});
                 res.end();
             }
-            else{
+            else {
                 graphs.update(query, {$pull: {write: {id: req.body['userID']}}});
                 res.end();
             }
@@ -388,11 +378,11 @@ app.post("/graph/deleteAccess", function (req,res) {
 /**
  * Supprimer un graphe grâce à son id
  */
-app.post("/graph/deleteOne", function (req,res) {
+app.post("/graph/deleteOne", function (req, res) {
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
             var usr = req.session.user;
-            var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}] };
+            var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}]};
             graphs.remove(query, function (err, result) {
                 res.end();
             });
@@ -403,7 +393,7 @@ app.post("/graph/deleteOne", function (req,res) {
 //------------------------------------------------------------
 // ERRORS
 //------------------------------------------------------------
-app.use(function(req, res, next){
+app.use(function (req, res, next) {
     res.setHeader('Content-Type', 'text/plain');
     res.status(404).send('Page introuvable !');
 });
@@ -415,10 +405,10 @@ app.use(function(req, res, next){
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-io.on('connection', function(socket) {
+io.on('connection', function (socket) {
     // Ajout d'un nouveau noeud.
     socket.on("node/add", function (node, fn) {
-        Mongo.connect(DB, function(error, db) {
+        Mongo.connect(DB, function (error, db) {
             db.collection("nodes").insert(node, function (error, results) {
                 fn(results.ops[0]);
                 io.emit("node/added", results.ops[0]);
@@ -448,7 +438,7 @@ io.on('connection', function(socket) {
     });
     // Ajout d'un lien.
     socket.on("link/add", function (link, fn) {
-        Mongo.connect(DB, function(error, db) {
+        Mongo.connect(DB, function (error, db) {
             db.collection("links").insert(link, function (error, results) {
                 fn(results.ops[0]);
                 io.emit("link/added", results.ops[0]);
