@@ -7,7 +7,7 @@ var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require('bcrypt-nodejs');
 var Favicon = require('serve-favicon');
 
-var DB = "mongodb://localhost/cmap";
+var DB = "mongodb://localhost/CmapDb";
 
 // Test de onnection à MongoDB.
 Mongo.connect(DB, function (error, db) {
@@ -219,7 +219,9 @@ app.get('/home', function (req, res) {
  */
 app.get("/users/getAll", function (req, res) {
     Mongo.connect(DB).then(function (db) {
-        db.collection("users").find().toArray(function (err, users) {
+        var usrID = req.session.user._id;
+
+        db.collection("users").find( {_id: {$ne: new ObjectId(usrID)}}).toArray(function (err, users) {
             res.json(users);
         });
     });
@@ -359,7 +361,6 @@ app.post("/graph/create", function (req, res) {
  */
 app.post("/graph/addAccess", function (req, res) {
     var userID = req.body['user']['_id'];
-    console.log(userID);
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
             var query = {

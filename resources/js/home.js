@@ -32,6 +32,9 @@ var app = new Vue({
         this.getAllGraphs();
     },
     methods: {
+        firstnameWithLastnameWithMail: function ({ firstname, lastname, mail }) {
+            return `${firstname} ${lastname} (${mail})`
+        },
         updateSelected: function(newSelected) {
             this.selected = newSelected
         },
