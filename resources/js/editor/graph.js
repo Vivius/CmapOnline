@@ -18,10 +18,9 @@ var svgContainer = "#svg-container";
 var width = $(svgContainer).width(), height = $(svgContainer).height();
 var linkDistance = 300;
 var conceptColor = "#ffc55a", objectColor = "#7ba1ff";
-var nodeWidth = 160, nodeHeight = 50;
+var nodeWidth = 150, nodeHeight = 60;
 var nodes, links, linkLabels;
-var lastInsertedNode = null;
-var selectedNode = null, selectedLink = null;
+var selectedNode = null, selectedLink = null, lastInsertedNode = null;
 
 /******************************************************************
  *** DATA MANAGEMENT                                            ***
@@ -34,14 +33,16 @@ var dataset = {
 };
 
 /**
- * Allows to import a graph dataset and update the display.
+ * Allows to import a graph dataset and updates the display.
  * @param graph object
  */
 function fetchGraph(graph) {
     $.each(graph.nodes, function (i, node) {
+        // Creates the node in the graph from data.
         var newNode = addNode(node._id, node.name, node.type, node.comment, node.graph_id);
         newNode.fixed = node.fixed;
-        setNodePosition(newNode, node.x, node.y);
+        setNodePosition(newNode, node.x, node.y); // Updates the position only if node.fixed = true.
+        if(newNode.name == "") nodeNewStyle(newNode);// Finds all new nodes not edited yet.
     });
     $.each(graph.links, function (i, link) {
         addLink(link._id, getNodeById(link.source), getNodeById(link.target), link.label, link.type, link.graph_id);
@@ -90,7 +91,7 @@ var force = d3.layout.force()
     .size([width, height])
     .linkDistance(linkDistance)
     .charge(-200)
-    .friction(0.8)
+    .friction(0.6)
     .gravity(0);
 
 // Force events
@@ -175,10 +176,6 @@ function update() {
             "text-anchor": "middle"
         })
         .text(function (d) { return d.type == "concept" ? "< " + d.name + " >" : d.name; });
-    nodes
-        .each(function (d) {
-            editNodeLabel(d, d.name);
-        });
 
     // Updates the references after creation.
     nodes = svg.selectAll('.node');
@@ -195,7 +192,7 @@ function update() {
         linkLabels
             .data(dataset.links, function (d) { return d._id; })
             .exit()
-            .attr("visibility", "hidden ");
+            .attr("visibility", "hidden");
     }
     links
         .data(dataset.links, function (d) { return d._id; })
@@ -297,16 +294,19 @@ function nodeSelectionStyle(node) {
  */
 function nodeNewStyle(node) {
     getD3Node(node).select("rect")
-        .attr({"stroke": "red", "stroke-width": 2})
+        .classed("new-node", true)
         .style("fill", "#82ee5b");
 }
 
 /**
- * Applies the standard theme when the node is edited.
+ * Applies the standard theme.
+ * This function is used when a node is edited to remove the "new-node" class.
  * @param node object
  */
 function nodeOldStyle(node) {
-    getD3Node(node).select("rect").style("fill", function () { return node.type == "concept" ? conceptColor : objectColor; });
+    getD3Node(node).select("rect")
+        .classed("new-node", false)
+        .style("fill", function () { return node.type == "concept" ? conceptColor : objectColor; });
 }
 
 /**
@@ -314,7 +314,7 @@ function nodeOldStyle(node) {
  * @param node object
  */
 function nodeDefaultStyle(node) {
-    getD3Node(node).select("rect").attr({"stroke": "none"});
+    getD3Node(node).select("rect").attr({"stroke": "none"})
 }
 
 /**
@@ -355,6 +355,7 @@ function addNode(id, name, type, comment, graph_id) {
     }
     dataset.nodes.push(newNode);
     update();
+    editNodeLabel(newNode, newNode.name);
     return newNode;
 }
 
@@ -365,13 +366,15 @@ function addNode(id, name, type, comment, graph_id) {
  * @param newLabel string
  */
 function editNodeLabel(node, newLabel) {
-    var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
     var d3Node = getD3Node(node);
     var d3Text =  d3Node.select("text");
     var d3Rect = d3Node.select("rect");
+    var formattedLabel = node.type == "concept" ? "< " + newLabel + " >" : newLabel;
     d3Text.text(formattedLabel);
     node.name = newLabel;
+    // Finds the best width for the current text.
     var newWidth = d3Text.node().getBBox().width + 30;
+    if(newWidth < nodeWidth) newWidth = nodeWidth;
     d3Rect.attr('width', newWidth + "px");
     d3Text.attr("x", newWidth/2);
 }
@@ -408,6 +411,13 @@ function freeNodePosition(node) {
  */
 function setLastInsertedNode(node) {
     lastInsertedNode = node;
+}
+
+/**
+ * Finds if a new node have already been created.
+ */
+function newNodeExists() {
+    return d3.selectAll(".new-node").size();
 }
 
 /**
@@ -610,6 +620,7 @@ export {
     setNodePosition,
     freeNodePosition,
     setLastInsertedNode,
+    newNodeExists,
     removeNode,
     getNodeById,
     getD3Node,

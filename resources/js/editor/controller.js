@@ -11,7 +11,6 @@ import * as Editor from "./editor";
  *** VARIABLES                                                  ***
  ******************************************************************/
 
-$(document).contextmenu(function () { return false; });
 var svgContainer = $("#svg-container");
 var menu = $("#menu");
 
@@ -104,8 +103,12 @@ function updateMenu() {
  * Function called when a new node is created.
  */
 function createNode() {
+    if(Graph.newNodeExists()) {
+        alert("A new node is already ready to be edited.");
+        return;
+    }
     Networker.addNode({
-        name: "NEW",
+        name: "",
         type: function (id) {
             return id == "concept-creator" ? "concept" : "object";
         }($(this).attr("id")),
@@ -137,6 +140,7 @@ function editNode() {
 
 /**
  * Function called when the user removes a node.
+ * All the links connected to this node are removed too.
  */
 function removeNode() {
     var nodeToRemove = Graph.selectedNode;
@@ -272,6 +276,7 @@ function removeLink() {
  ******************************************************************/
 
 // General behaviours
+$(document).contextmenu(function () { return false; });
 svgContainer.mousedown(function () {
     Graph.unselectLink();
     Graph.unselectNode();

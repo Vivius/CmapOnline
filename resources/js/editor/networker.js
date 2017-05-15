@@ -103,6 +103,7 @@ socket.on("node/updated", function (node) {
         nodeToUpdate.comment = node.comment;
         Graph.editNodeLabel(nodeToUpdate, node.name);
         Graph.setNodePosition(nodeToUpdate, node.x, node.y);
+        if(node.name != "") Graph.nodeOldStyle(node);
         console.log("NODE " + node._id + " UPDATED");
     }
 });
