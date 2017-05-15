@@ -5,7 +5,7 @@ var ObjectId = require("mongodb").ObjectID;
 var Session = require('express-session');
 var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require('bcrypt-nodejs');
-var favicon = require('serve-favicon');
+var Favicon = require('serve-favicon');
 
 var DB = "mongodb://localhost/cmap";
 
@@ -18,7 +18,10 @@ Mongo.connect(DB, function (error, db) {
     console.log("Connecté à la base de données 'cmap'");
 });
 
-// Configuration du framework express.
+//------------------------------------------------------------
+// CONFIGURATION DU FRAMEWORK
+//------------------------------------------------------------
+
 var app = Express();
 app.use("/css", Express.static(__dirname + '/css'));
 app.use("/images", Express.static(__dirname + '/images'));
@@ -26,7 +29,7 @@ app.use("/js", Express.static(__dirname + '/js'));
 app.use("/html", Express.static(__dirname + '/html'));
 app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({extended: true}));
-app.use(favicon(__dirname + '/images/favicon/favicon.ico'));
+app.use(Favicon(__dirname + '/images/favicon/favicon.ico'));
 
 // Initialisation de la session.
 app.use(Session({
@@ -52,6 +55,10 @@ app.use(function (req, res, next) {
 // ROUTES
 //------------------------------------------------------------
 
+//------------------------------------------------------------
+// VIEWS
+//------------------------------------------------------------
+
 /**
  * Affichage de la page login
  */
@@ -63,6 +70,34 @@ app.get('/', function (req, res) {
         res.sendFile(__dirname + '/html/login.html');
     }
 });
+
+/**
+ * Affichage de la homepage.
+ */
+app.get('/home', function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/home.html');
+});
+
+/**
+ * Affichage de la page d'édition du graphe spécifié.
+ */
+app.get("/edit/:id", function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/editor.html');
+});
+
+/**
+ * Affichage de la page de lecture du graphe spécifié.
+ */
+app.get("/view/:id", function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(__dirname + '/html/editor.html');
+});
+
+//------------------------------------------------------------
+// ACTIONS
+//------------------------------------------------------------
 
 /**
  * Login
@@ -78,6 +113,7 @@ app.post("/login", function (req, res) {
         });
     });
 });
+
 
 /**
  * Logout
@@ -119,7 +155,13 @@ app.get('/user/current', function (req, res) {
  */
 app.post("/graph/getAccess", function (req, res) {
     Mongo.connect(DB).then(function (db) {
-        var graphs = new Promise(function (resolve) {
+        // Préparation de la requête permettant de récupérer un graph
+        // Les paramètres de la requêtes sont l'id du graphe et le owner
+        // Le owner est utilisé car il permet de savoir si l'utilisateur connecté est bien le owner
+        // et q'il est donc le seul à pouvoir modifier les droits
+        // Projection récupère seulement les attributs 'read' and 'write'
+
+        var graph = new Promise(function (resolve) {
             var usr = req.session.user;
             var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}]};
             var projection = {read: 1, write: 1, _id: 0};
@@ -129,63 +171,41 @@ app.post("/graph/getAccess", function (req, res) {
             });
         });
 
+        // Préparaton de la requête permettant de récupérer tous les utilisateurs
         var users = new Promise(function (resolve) {
             resolve(db.collection("users").find().toArray());
         });
 
-        Promise.all([graphs, users]).then(function (data) {
 
-            graphs = data[0][0];
-            users = data[1];
+        Promise.all([graph, users]).then(function (data) {
 
-            if (typeof graphs['read'] !== 'undefined') {
-                for (var i = 0; i < graphs['read'].length; i++) {
+            graph = data[0][0]; // Attributs 'read' and 'write' : { read: [], write: []}
+            users = data[1]; // Données de tous les utilisateurs
+
+            if (graph.read.length != 0) {
+                console.log('ok');
+                for (var i = 0; i < graph.read.length; i++) {
                     for (var j = 0; j < users.length; j++) {
-                        if (graphs['read'][i]['id'] == users [j]['_id']) {
-                            graphs['read'][i] = users [j];
+                        if (graph.read[i].id == users[j]._id) {
+                            graph.read[i] = users[j];
                         }
                     }
                 }
             }
-            if (typeof graphs['write'] !== 'undefined') {
-                for (i = 0; i < graphs['write'].length; i++) {
+            if (graph.write.length != 0) {
+                for (i = 0; i < graph.write.length; i++) {
                     for (j = 0; j < users.length; j++) {
-                        if (graphs['write'][i]['id'] == users [j]['_id']) {
-                            graphs['write'][i] = users [j];
+                        if (graph.write[i].id == users[j]._id) {
+                            graph.write[i] = users[j];
                         }
                     }
                 }
             }
-            res.json(graphs);
-
+            res.json(graph);
         });
     });
 });
 
-
-/**
- * Affichage de la homepage.
- */
-app.get('/home', function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/home.html');
-});
-
-/**
- * Affichage de la page d'édition du graphe spécifié.
- */
-app.get("/edit/:id", function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/editor.html');
-});
-
-/**
- * Affichage de la page de lecture du graphe spécifié.
- */
-app.get("/view/:id", function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/editor.html');
-});
 
 /**
  * Retourne un graphe entier grâce à son identifiant.
