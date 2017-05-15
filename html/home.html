@@ -60,7 +60,7 @@
                     <img src="/images/home/door-key.png" v-if="isOwner(graph.owner._id)" v-on:click="seenBlackOverlay = true; seenBoxAccess = true; getAccess(graph._id); graphID = graph._id">
                 </div>
                 <div align='right' class="cell">
-                    <a :download="graph.name + '.json'" :href="'/graph/get/' + graph._id"><img src="/images/home/export.png" v-if="canView(graph.read) || canEdit(graph.write) || isOwner(graph.owner._id)"></a>
+                    <a :download="graph.name + '.json'" :href="'/graph/parse/' + graph._id"><img src="/images/home/export.png" v-if="canView(graph.read) || canEdit(graph.write) || isOwner(graph.owner._id)"></a>
                 </div>
                 <div align='right' class="cell">
                     <img src="/images/home/eye.png" v-if="canView(graph.read) || canEdit(graph.write) || isOwner(graph.owner._id) " v-on:click="redirectToViewer(graph._id)">
