@@ -7,7 +7,7 @@ var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require('bcrypt-nodejs');
 var favicon = require('serve-favicon');
 
-var DB = "mongodb://localhost/cmap";
+var DB = "mongodb://localhost/CmapDb";
 
 // Test de onnection à MongoDB.
 Mongo.connect(DB, function (error, db) {
@@ -114,6 +114,10 @@ app.get('/user/current', function (req, res) {
     res.json(req.session.user);
 });
 
+
+
+
+
 /**
  * Retourne les access du graph
  */
@@ -169,6 +173,17 @@ app.post("/graph/getAccess", function (req, res) {
 app.get('/home', function (req, res) {
     res.setHeader('Content-Type', 'text/html');
     res.sendFile(__dirname + '/html/home.html');
+});
+
+/**
+ * Retourne la liste de tous les graphes.
+ */
+app.get("/users/getAll", function (req, res) {
+    Mongo.connect(DB).then(function (db) {
+         db.collection("users").find().toArray(function (err, users) {
+            res.json(users);
+         });
+    });
 });
 
 /**
@@ -304,6 +319,8 @@ app.post("/graph/create", function (req, res) {
  * Permet d'ajouter un acces en écriture ou en lecture à un utilisateur (ID)
  */
 app.post("/graph/addAccess", function (req, res) {
+    var userID = req.body['user']['_id'];
+    console.log(userID);
     Mongo.connect(DB, function (error, db) {
         db.collection('graphs', {}, function (err, graphs) {
             var query = {
@@ -311,19 +328,19 @@ app.post("/graph/addAccess", function (req, res) {
                     {_id: new ObjectId(req.body['graphID'])},
                     {
                         $nor: [
-                            {read: {id: req.body['userID']}},
-                            {write: {id: req.body['userID']}}
+                            {read: {id: userID}},
+                            {write: {id: userID}}
                         ]
                     }
                 ]
             };
 
             if (req.body['access'] == 'read') {
-                graphs.update(query, {$push: {read: {id: req.body['userID']}}}, {upsert: true});
+                graphs.update(query, {$push: {read: {id: userID}}}, {upsert: true});
                 res.end();
             }
             else {
-                graphs.update(query, {$push: {write: {id: req.body['userID']}}}, {upsert: true});
+                graphs.update(query, {$push: {write: {id: userID}}}, {upsert: true});
                 res.end();
             }
         });

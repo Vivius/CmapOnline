@@ -3,6 +3,8 @@ var elixir = require("laravel-elixir");
 elixir(function(mix) {
     // Copies
     mix.copy("./node_modules/animate.css/animate.min.css", "css/animate.css");
+    mix.copy("./node_modules/vue-multiselect/dist/vue-multiselect.min.css", "css/vue-multiselect.css");
+
 
     // SASS
     mix.sass("./resources/sass/app.scss", "./css/app.css");

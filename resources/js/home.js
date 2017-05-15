@@ -3,6 +3,7 @@
  */
 import  Vue from 'vue/dist/vue';
 import VueResource from 'vue-resource';
+import Multiselect from 'vue-multiselect'
 Vue.use(VueResource);
 
 var app = new Vue({
@@ -10,7 +11,8 @@ var app = new Vue({
     data: {
         name: '',
         picked:'read',
-        userID: '',
+        selected: null,
+        users: [],
         seenBoxAccess: false,
         seenBlackOverlay: false,
         seenBoxNewGraph: false,
@@ -24,6 +26,7 @@ var app = new Vue({
         write:[],
         graphID: 0,
     },
+    components: { Multiselect },
     created:function() {
         this.getCurrentUser();
         this.getAllGraphs();
@@ -47,6 +50,13 @@ var app = new Vue({
             }, response => {
             });
         },
+        getAllUsers: function () {
+            this.$http.get('/users/getAll').then(response => {
+                this.users= response.body;
+                console.log(this.users);
+            }, response => {
+            });
+        },
         getAllGraphs: function () {
             this.$http.get('/graph/getAll').then(response => {
                 this.graphs = response.body;
@@ -58,6 +68,7 @@ var app = new Vue({
                 this.read = response.body['read'];
                 this.write = response.body['write'];
                 this.graphID = id;
+                this.getAllUsers();
             }, response => {
             });
         },
@@ -70,9 +81,8 @@ var app = new Vue({
             });
         },
         addAccess: function () {
-            this.$http.post('/graph/addAccess',{graphID: this.graphID, userID: this.userID,access: this.picked}).then(response => {
+            this.$http.post('/graph/addAccess',{graphID: this.graphID, user:this.selected,access: this.picked}).then(response => {
                 this.getAccess(this.graphID);
-                this.userID = '';
 
             }, response => {
             });

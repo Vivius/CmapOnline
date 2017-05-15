@@ -6,6 +6,8 @@
     <link rel="stylesheet" type="text/css" href="/css/animate.css"/>
     <link rel="stylesheet" type="text/css" href="/css/app.css"/>
     <link rel="stylesheet" type="text/css" href="/css/homepage.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/vue-multiselect.css"/>
+
 
 </head>
 <body >
@@ -147,7 +149,13 @@
 
                 <div class="row">
                     <div class="cell addcell">
-                        <!-- INSERER LE VUE-MULTISELECT ICI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! --->
+                        <multiselect
+                                v-model="selected"
+                                :options="users"
+                                label="mail"
+                                track-by="mail"
+                        >
+                        </multiselect>
                     </div>
                     <div class="cell">
                         <form action="">
