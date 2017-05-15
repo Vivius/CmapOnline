@@ -20,6 +20,7 @@ var linkDistance = 300;
 var conceptColor = "#ffc55a", objectColor = "#7ba1ff";
 var nodeWidth = 160, nodeHeight = 50;
 var nodes, links, linkLabels;
+var lastInsertedNode = null;
 var selectedNode = null, selectedLink = null;
 
 /******************************************************************
@@ -88,9 +89,9 @@ var force = d3.layout.force()
     .links(dataset.links)
     .size([width, height])
     .linkDistance(linkDistance)
-    .charge(-1000)
-    .theta(0.1)
-    .gravity(0.05);
+    .charge(-200)
+    .friction(0.8)
+    .gravity(0);
 
 // Force events
 force.drag().on("dragstart", function () { d3.event.sourceEvent.stopPropagation(); });
@@ -287,6 +288,25 @@ function forceTick() {
  */
 function nodeSelectionStyle(node) {
     getD3Node(node).select("rect").attr({"stroke": "red", "stroke-width": 2});
+
+}
+
+/**
+ * Applies a specific theme for an unmodified node.
+ * @param node object
+ */
+function nodeNewStyle(node) {
+    getD3Node(node).select("rect")
+        .attr({"stroke": "red", "stroke-width": 2})
+        .style("fill", "#82ee5b");
+}
+
+/**
+ * Applies the standard theme when the node is edited.
+ * @param node object
+ */
+function nodeOldStyle(node) {
+    getD3Node(node).select("rect").style("fill", function () { return node.type == "concept" ? conceptColor : objectColor; });
 }
 
 /**
@@ -294,7 +314,7 @@ function nodeSelectionStyle(node) {
  * @param node object
  */
 function nodeDefaultStyle(node) {
-    getD3Node(node).select("rect").attr("stroke", "none");
+    getD3Node(node).select("rect").attr({"stroke": "none"});
 }
 
 /**
@@ -329,6 +349,10 @@ function linkDefaultStyle(link) {
  */
 function addNode(id, name, type, comment, graph_id) {
     var newNode = {_id: id, name: name, type: type, comment: comment, graph_id: graph_id};
+    if(lastInsertedNode) {
+        newNode.x = lastInsertedNode.x + 100;
+        newNode.y = lastInsertedNode.y - 100;
+    }
     dataset.nodes.push(newNode);
     update();
     return newNode;
@@ -375,6 +399,15 @@ function setNodePosition(node, x, y) {
 function freeNodePosition(node) {
     node.fixed = false;
     update();
+}
+
+/**
+ * Set the last inserted node by the user.
+ * Variable used for egonomics.
+ * @param node object
+ */
+function setLastInsertedNode(node) {
+    lastInsertedNode = node;
 }
 
 /**
@@ -576,12 +609,15 @@ export {
     editNodeLabel,
     setNodePosition,
     freeNodePosition,
+    setLastInsertedNode,
     removeNode,
     getNodeById,
     getD3Node,
     getDomNode,
     selectNode,
     unselectNode,
+    nodeNewStyle,
+    nodeOldStyle,
 
     addLink,
     findLink,

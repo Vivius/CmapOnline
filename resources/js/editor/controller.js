@@ -11,6 +11,7 @@ import * as Editor from "./editor";
  *** VARIABLES                                                  ***
  ******************************************************************/
 
+$(document).contextmenu(function () { return false; });
 var svgContainer = $("#svg-container");
 var menu = $("#menu");
 
@@ -116,6 +117,8 @@ function createNode() {
     }, function (node) {
         var newNode = Graph.addNode(node._id, node.name, node.type, node.comment, node.graph_id);
         Graph.selectNode(newNode);
+        Graph.nodeNewStyle(newNode);
+        Graph.setLastInsertedNode(newNode);
         Graph.unselectLink();
         addNodeEventListeners(newNode);
         updateMenu();
@@ -127,6 +130,7 @@ function createNode() {
  */
 function editNode() {
     Graph.editNodeLabel(Graph.selectedNode, nodeNameInput.val());
+    Graph.nodeOldStyle(Graph.selectedNode);
     Graph.selectedNode.comment = nodeCommentTextArea.val();
     Networker.updateNode(Graph.selectedNode);
 }
@@ -313,6 +317,12 @@ function addNodeEventListeners(node) {
         Graph.freeNodePosition(node);
         Networker.updateNode(node);
         Graph.unselectNode();
+    });
+    domNode.contextmenu(function (e) {
+        Graph.freeNodePosition(node);
+        Networker.updateNode(node);
+        Graph.unselectNode();
+        return false;
     });
 }
 

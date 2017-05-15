@@ -30,7 +30,8 @@ $(function () {
         $.each(Graph.dataset.links, function (i, link) {
             Controller.addLinkEventListeners(link);
         });
-        if(!writeAccess) $("#menu").hide();
+        Graph.setLastInsertedNode(Graph.dataset.nodes[Graph.dataset.nodes.length-1]);
+        if(writeAccess) $("#menu").show();
     });
     $.get("/user/current", function (user) {
         currentUser = user;

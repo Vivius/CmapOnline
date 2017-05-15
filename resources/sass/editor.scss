@@ -13,6 +13,7 @@ html {
       // Style du menu
       #menu {
         position: absolute;
+        display: none;
         top: 0;
         right: 0;
         width: $menuWidth;
