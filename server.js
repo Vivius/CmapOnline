@@ -357,15 +357,16 @@ app.post("/graph/changeAccess", function (req, res) {
             var query = {$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}]};
 
             if (req.body['typeAccess'] == 'read') {
-                graphs.update(query, {$pull: {write: {id: req.body['userID']}}});
-                graphs.update(query, {$push: {read: {id: req.body['userID']}}});
-                res.end();
+                graphs.update(query, {$pull: {write: {id: req.body['userID']}}}),function (error, results) {
+                    graphs.update(query, {$push: {read: {id: req.body['userID']}}});
+                }
             }
             else {
-                graphs.update(query, {$pull: {read: {id: req.body['userID']}}});
-                graphs.update(query, {$push: {write: {id: req.body['userID']}}});
-                res.end();
+                graphs.update(query, {$pull: {read: {id: req.body['userID']}}}),function (error, results) {
+                    graphs.update(query, {$push: {write: {id: req.body['userID']}}});
+                }
             }
+            res.end();
         });
     })
 });
@@ -381,12 +382,11 @@ app.post("/graph/deleteAccess", function (req, res) {
 
             if (req.body['typeAccess'] == 'read') {
                 graphs.update(query, {$pull: {read: {id: req.body['userID']}}});
-                res.end();
             }
             else {
                 graphs.update(query, {$pull: {write: {id: req.body['userID']}}});
-                res.end();
             }
+            res.end();
         });
     })
 });
