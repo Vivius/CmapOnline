@@ -298,32 +298,28 @@ validateLinkButton.click(editLink);
  */
 function addNodeEventListeners(node) {
     var domNode = $(Graph.getDomNode(node));
+    // Selects the node and opens the menu when the node is pressed.
     domNode.mousedown(function (e) {
         e.stopPropagation();
-        node.fixed = true; // Fix the position of the node.
         Graph.unselectLink();
         Graph.selectNode(node);
         updateMenu();
     });
-    domNode.mouseup(function () {
+    // Updates the current node depending on the action.
+    domNode.mouseup(function (e) {
+        if(e.which == 1) // Left button
+            node.fixed = true; // Fix the node position.
+        else if(e.which == 3) // Right button
+            Graph.freeNodePosition(node); // Free the node position
         Networker.updateNode(node);
     });
+    // Begins the creation of a link depending of the linkEditionStatus object.
     domNode.click(function (e) {
         e.stopPropagation();
         createLinkManager(linkEditionStatus, node);
     });
-    domNode.dblclick(function (e) {
-        e.stopPropagation();
-        Graph.freeNodePosition(node);
-        Networker.updateNode(node);
-        Graph.unselectNode();
-    });
-    domNode.contextmenu(function (e) {
-        Graph.freeNodePosition(node);
-        Networker.updateNode(node);
-        Graph.unselectNode();
-        return false;
-    });
+    // Prevents the browwser to open the contextual window.
+    domNode.contextmenu(function () { return false; });
 }
 
 /**
