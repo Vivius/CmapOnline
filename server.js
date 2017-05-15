@@ -217,7 +217,6 @@ app.get("/graph/parse/:id", function (req, res) {
                             name: graph[0].name,
                             description: "",
                             directed: true,
-                            metadata: [],
                             nodes: nodes,
                             links: links
                         }
@@ -239,11 +238,12 @@ app.get("/graph/parse/:id", function (req, res) {
 
                     // Suppression des données inutiles dans les links
                     format.graph.links.forEach(function (link) {
-                        if (link.type == "ako") link.type = "subconcept-of";
+                        if (link.type == "ako" || link.type == "association") link.type = "subconcept-of";
                         if (link.type == "instance of") {
                             link.type = "instance-of";
                             link.label = "io";
                         }
+
                         delete link._id;
                         delete link.graph_id;
                     });
