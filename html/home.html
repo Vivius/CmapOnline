@@ -152,9 +152,10 @@
                         <multiselect
                                 v-model="selected"
                                 :options="users"
-                                label="mail"
                                 track-by="mail"
+                                label="mail"
                                 placeholder="Select one user"
+                                :custom-label="firstnameWithLastnameWithMail"
                         >
                         </multiselect>
                     </div>
