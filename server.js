@@ -8,10 +8,10 @@ var Bcrypt = require('bcrypt-nodejs');
 var Favicon = require('serve-favicon');
 var SharedSession = require("express-socket.io-session");
 
-var DB = "mongodb://localhost/CmapDb";
+var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
-Mongo.connect(DB, function (error, db) {
+Mongo.connect(DB, function (error) {
     if (error) {
         console.log("ERREUR - Impossible de se conencter à MongoDB");
         throw error;
@@ -183,8 +183,9 @@ app.post("/graph/getAccess", function (req, res) {
             graph = data[0][0]; // Attributs 'read' and 'write' : { read: [], write: []}
             users = data[1]; // Données de tous les utilisateurs
 
+            // Parcours les tableaux json 'write' and 'read' qui contiennent les id des utilisateurs
+            // pour les remplacer par leurs données corrrespondantes (mail, nom, prenom)
             if (graph.read.length != 0) {
-                console.log('ok');
                 for (var i = 0; i < graph.read.length; i++) {
                     for (var j = 0; j < users.length; j++) {
                         if (graph.read[i].id == users[j]._id) {
@@ -213,7 +214,6 @@ app.post("/graph/getAccess", function (req, res) {
 app.get("/users/getAll", function (req, res) {
     Mongo.connect(DB).then(function (db) {
         var usrID = req.session.user._id;
-
         db.collection("users").find( {_id: {$ne: new ObjectId(usrID)}}).toArray(function (err, users) {
             res.json(users);
         });
@@ -308,8 +308,8 @@ app.get("/graph/getAll", function (req, res) {
             users = data[1];
             for (var i = 0; i < graphs.length; i++) {
                 for (var j = 0; j < users.length; j++) {
-                    if (graphs[i]['owner'] == users [j]['_id']) {
-                        graphs[i]['owner'] = users [j];
+                    if (graphs[i].owner == users [j]._id) {
+                        graphs[i].owner = users [j];
                     }
                 }
             }
@@ -412,7 +412,7 @@ app.post("/graph/deleteOne", function (req, res) {
         db.collection('graphs', {}, function (err, graphs) {
             var usr = req.session.user;
             var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}]};
-            graphs.remove(query, function (err, result) {
+            graphs.remove(query, function () {
                 res.end();
             });
         });
@@ -423,7 +423,7 @@ app.post("/graph/deleteOne", function (req, res) {
 // ERRORS
 //------------------------------------------------------------
 
-app.use(function (req, res, next) {
+app.use(function (req, res) {
     res.setHeader('Content-Type', 'text/plain');
     res.status(404).send('Page introuvable !');
 });
@@ -452,7 +452,7 @@ io.on('connection', function (socket) {
         });
     });
     // Met à jour un noeud
-    socket.on("node/update", function (node, fn) {
+    socket.on("node/update", function (node) {
         Mongo.connect(DB, function (error, db) {
             db.collection('nodes').update({_id: new ObjectId(node._id)},
                 {$set: {name: node.name, type: node.type, comment: node.comment, x: node.x, y: node.y, fixed: node.fixed}},
@@ -463,9 +463,9 @@ io.on('connection', function (socket) {
         });
     });
     // Suppression d'un noeud
-    socket.on("node/remove", function (node, fn) {
+    socket.on("node/remove", function (node) {
         Mongo.connect(DB, function (error, db) {
-            db.collection('nodes').remove({_id: new ObjectId(node._id)}, function (error, results) {
+            db.collection('nodes').remove({_id: new ObjectId(node._id)}, function () {
                 io.emit("node/removed", node);
                 console.log("NODE " + node._id + " REMOVED");
             });
@@ -482,9 +482,9 @@ io.on('connection', function (socket) {
         });
     });
     // Suppression d'un lien
-    socket.on("link/remove", function (link, fn) {
+    socket.on("link/remove", function (link) {
         Mongo.connect(DB, function (error, db) {
-            db.collection('links').remove({_id: new ObjectId(link._id)}, function (error, results) {
+            db.collection('links').remove({_id: new ObjectId(link._id)}, function () {
                 io.emit("link/removed", link);
                 console.log("LINK " + link._id + " REMOVED");
             });
