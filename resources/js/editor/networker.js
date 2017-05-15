@@ -2,6 +2,7 @@
  * Module managing the network access for web sockets specially.
  */
 
+import $ from "jquery";
 import * as Graph from "./graph";
 import * as Controller from "./controller";
 import * as Editor from "./editor";
@@ -63,6 +64,15 @@ function addLink(link, callback) {
 function removeLink(link) {
     if(Editor.writeAccess && link != null)
         socket.emit("link/remove", link);
+}
+
+/**
+ * Indicates that the current user is connected to the graph.
+ * @param data
+ */
+function userConnection(data) {
+    if(data.graph_id && data.user)
+        socket.emit("user/connection", data);
 }
 
 /******************************************************************
@@ -133,6 +143,62 @@ socket.on("link/removed", function (link) {
     }
 });
 
+/**
+ * Function called when a new user is connected to the current graph.
+ */
+socket.on("user/connected", function (data) {
+    var canAddUser = true;
+    if(data.graph_id == Editor.graphId && data.user._id != Editor.currentUser._id) {
+        $.each(Editor.connectedUsers, function (i, user) {
+            if(user._id == data.user._id) {
+                canAddUser = false;
+                return true;
+            }
+        });
+        if(canAddUser) {
+            Editor.connectedUsers.push(data.user);
+            Editor.updateConnectedUsersList();
+        }
+        socket.emit("user/confirm", {user: Editor.currentUser, graph_id: Editor.graphId});
+    }
+});
+
+/**
+ * Function called when one of the other users confirms his presence.
+ */
+socket.on("user/confirmed", function (data) {
+    if(data.graph_id == Editor.graphId && data.user._id != Editor.currentUser._id) {
+        var canAddUser = true;
+        $.each(Editor.connectedUsers, function (i, user) {
+            if(user._id == data.user._id) {
+                canAddUser = false;
+                return true;
+            }
+        });
+        if(canAddUser) {
+            Editor.connectedUsers.push(data.user);
+            Editor.updateConnectedUsersList();
+        }
+    }
+});
+
+/**
+ * Refresh the connected users list when someone disconnects.
+ */
+socket.on("user/disconnected", function (user) {
+    var userToDelete = false;
+    $.each(Editor.connectedUsers, function (i, object) {
+        if(object._id == user._id) {
+            userToDelete = user;
+            return true;
+        }
+    });
+    if(userToDelete) {
+        Editor.connectedUsers.splice(Editor.connectedUsers.indexOf(userToDelete), 1);
+        Editor.updateConnectedUsersList();
+    }
+});
+
 /******************************************************************
  *** EXPORTS                                                    ***
  ******************************************************************/
@@ -142,5 +208,6 @@ export {
     removeNode,
     updateNode,
     addLink,
-    removeLink
+    removeLink,
+    userConnection
 }

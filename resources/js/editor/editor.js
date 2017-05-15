@@ -9,6 +9,8 @@ import * as Networker from "./networker";
 
 var graphId = 0;
 var writeAccess = false;
+var currentUser = {};
+var connectedUsers = [];
 
 /******************************************************************
  *** MAIN                                                       ***
@@ -29,6 +31,10 @@ $(function () {
             Controller.addLinkEventListeners(link);
         });
         if(!writeAccess) $("#menu").hide();
+    });
+    $.get("/user/current", function (user) {
+        currentUser = user;
+        if(writeAccess) Networker.userConnection({user: currentUser, graph_id: graphId});
     });
 });
 
@@ -55,11 +61,24 @@ function setAccessLevel() {
     writeAccess = accessMode == "edit";
 }
 
+/**
+ * Updates the list of the connected users.
+ */
+function updateConnectedUsersList() {
+    $("#connectedUsers").empty();
+    $.each(connectedUsers, function (i, user) {
+       $("#connectedUsers").append("<p>" + user.firstname + " " + user.lastname + "</p>");
+    });
+}
+
 /******************************************************************
  *** EXPORTS                                                    ***
  ******************************************************************/
 
 export {
     graphId,
-    writeAccess
+    writeAccess,
+    currentUser,
+    connectedUsers,
+    updateConnectedUsersList
 }

@@ -157,6 +157,41 @@ html {
             border-color: #666 #666 transparent transparent;
           }
         }
+
+        #connectedUsers {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 100%;
+          max-height: 100px;
+          overflow: auto;
+          p {
+            width: calc(100% - 10px);
+            padding: 5px;
+            font-size: 11px;
+          }
+          p:nth-child(even) {
+            background-color: #ededed;
+          }
+          p:nth-child(odd) {
+            background-color: #d1d1d1;
+          }
+        }
+
+        #home-button {
+          display: block;
+          padding: 10px;
+          font-size: 16px;
+          text-align: center;
+          text-decoration: none;
+          font-weight: bold;
+          background-color: #d1d1d1;
+          color: black;
+          &:hover {
+            background-color: #ffffff;
+            transition: 0.3s background-color;
+          }
+        }
       }
 
       // Style du graphe
@@ -183,16 +218,6 @@ html {
           &:hover {
             cursor: pointer;
           }
-        }
-      }
-
-      #home-button {
-        position: absolute;
-        top: 0px;
-
-        button {
-          font-size: 25px;
-          padding: 5px 15px;
         }
       }
     }

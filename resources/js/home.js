@@ -105,9 +105,8 @@ var app = new Vue({
                 for (var i = 0; i < read.length; i++) {
                     if (read[i]['id'] == this.currentUser._id)
                         return true;
-                    else
-                        return false;
                 }
+                return false;
             }
             return false;
         },
@@ -117,9 +116,8 @@ var app = new Vue({
                 for (var i = 0; i < write.length; i++) {
                     if (write[i]['id'] == this.currentUser._id)
                         return true;
-                    else
-                        return false;
                 }
+                return false;
             }
             return false;
         },

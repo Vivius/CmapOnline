@@ -6,6 +6,7 @@ var Session = require('express-session');
 var MongoStore = require('connect-mongo')(Session);
 var Bcrypt = require('bcrypt-nodejs');
 var Favicon = require('serve-favicon');
+var SharedSession = require("express-socket.io-session");
 
 var DB = "mongodb://localhost/cmap";
 
@@ -32,7 +33,7 @@ app.use(BodyParser.urlencoded({extended: true}));
 app.use(Favicon(__dirname + '/images/favicon/favicon.ico'));
 
 // Initialisation de la session.
-app.use(Session({
+var session = Session({
     secret: 'moijecomprendspasacounamatata',
     resave: false,
     saveUninitialized: true,
@@ -41,9 +42,12 @@ app.use(Session({
         maxAge: new Date(Date.now() + (24 * 60 * 60 * 1000))
     },
     store: new MongoStore({url: DB})
-}));
+});
 
-// Middleware authentification
+// Utilisation des sessions dans express.
+app.use(session);
+
+// Middleware d'authentification
 app.use(function (req, res, next) {
     if (!req.session.user && req.path !== "/" && req.path !== "/login" && req.path !== "/signup") {
         return res.redirect('/');
@@ -175,9 +179,7 @@ app.post("/graph/getAccess", function (req, res) {
             resolve(db.collection("users").find().toArray());
         });
 
-
         Promise.all([graph, users]).then(function (data) {
-
             graph = data[0][0]; // Attributs 'read' and 'write' : { read: [], write: []}
             users = data[1]; // Données de tous les utilisateurs
 
@@ -205,15 +207,6 @@ app.post("/graph/getAccess", function (req, res) {
     });
 });
 
-
-/**
- * Affichage de la homepage.
- */
-app.get('/home', function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/home.html');
-});
-
 /**
  * Retourne la liste de tous les graphes.
  */
@@ -223,22 +216,6 @@ app.get("/users/getAll", function (req, res) {
             res.json(users);
         });
     });
-});
-
-/**
- * Affichage de la page d'édition du graphe spécifié.
- */
-app.get("/edit/:id", function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/editor.html');
-});
-
-/**
- * Affichage de la page de lecture du graphe spécifié.
- */
-app.get("/view/:id", function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/editor.html');
 });
 
 /**
@@ -254,7 +231,6 @@ app.get("/graph/get/:id", function (req, res) {
         });
     });
 });
-
 
 /**
  * Parse un graphe au format voulu pour l'export
@@ -353,7 +329,6 @@ app.post("/graph/create", function (req, res) {
     })
 });
 
-
 /**
  * Permet d'ajouter un acces en écriture ou en lecture à un utilisateur (ID)
  */
@@ -376,8 +351,7 @@ app.post("/graph/addAccess", function (req, res) {
 
             if (req.body['access'] == 'read') {
                 graphs.update(query, {$push: {read: {id: userID}}}, {upsert: true});
-            }
-            else {
+            } else {
                 graphs.update(query, {$push: {write: {id: userID}}}, {upsert: true});
             }
             res.end();
@@ -420,8 +394,7 @@ app.post("/graph/deleteAccess", function (req, res) {
 
             if (req.body['typeAccess'] == 'read') {
                 graphs.update(query, {$pull: {read: {id: req.body['userID']}}});
-            }
-            else {
+            } else {
                 graphs.update(query, {$pull: {write: {id: req.body['userID']}}});
             }
             res.end();
@@ -448,6 +421,7 @@ app.post("/graph/deleteOne", function (req, res) {
 //------------------------------------------------------------
 // ERRORS
 //------------------------------------------------------------
+
 app.use(function (req, res, next) {
     res.setHeader('Content-Type', 'text/plain');
     res.status(404).send('Page introuvable !');
@@ -459,6 +433,11 @@ app.use(function (req, res, next) {
 
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+
+// Utilisation des sessions (partage).
+io.use(SharedSession(session, {
+    autoSave: true
+}));
 
 io.on('connection', function (socket) {
     // Ajout d'un nouveau noeud.
@@ -509,6 +488,21 @@ io.on('connection', function (socket) {
                 console.log("LINK " + link._id + " REMOVED");
             });
         });
+    });
+    // On détecte quand un client se connecte.
+    socket.on("user/connection", function (data) {
+        console.log("Connexion");
+        io.emit("user/connected", data);
+    });
+    socket.on("user/confirm", function (data) {
+        console.log("Confirmation");
+        io.emit("user/confirmed", data);
+    });
+    // On détecte quand un client se déconnecte d'un graphe.
+    socket.on("disconnect", function () {
+        console.log("Déconnexion");
+        var session = socket.handshake.session;
+        io.emit("user/disconnected", session.user);
     });
 });
 
