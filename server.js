@@ -219,9 +219,9 @@ app.get('/home', function (req, res) {
  */
 app.get("/users/getAll", function (req, res) {
     Mongo.connect(DB).then(function (db) {
-         db.collection("users").find().toArray(function (err, users) {
+        db.collection("users").find().toArray(function (err, users) {
             res.json(users);
-         });
+        });
     });
 });
 
@@ -395,12 +395,12 @@ app.post("/graph/changeAccess", function (req, res) {
             var query = {$and: [{_id: new ObjectId(req.body['graphID'])}, {owner: usr._id}]};
 
             if (req.body['typeAccess'] == 'read') {
-                graphs.update(query, {$pull: {write: {id: req.body['userID']}}}),function (error, results) {
+                graphs.update(query, {$pull: {write: {id: req.body['userID']}}}), function (error, results) {
                     graphs.update(query, {$push: {read: {id: req.body['userID']}}});
                 }
             }
             else {
-                graphs.update(query, {$pull: {read: {id: req.body['userID']}}}),function (error, results) {
+                graphs.update(query, {$pull: {read: {id: req.body['userID']}}}), function (error, results) {
                     graphs.update(query, {$push: {write: {id: req.body['userID']}}});
                 }
             }
