@@ -481,6 +481,18 @@ io.on('connection', function (socket) {
             });
         });
     });
+    // Met à jour un lien
+    socket.on("link/update", function (link) {
+        Mongo.connect(DB, function (error, db) {
+            db.collection('links').update(
+                {_id: new ObjectId(link._id)},
+                {$set: {label: link.label, type: link.type, source: link.source._id, target: link.target._id}},
+                function () {
+                    io.emit("link/updated", link);
+                    console.log("LINK " + link._id + " UPDATED");
+                });
+        });
+    });
     // Suppression d'un lien
     socket.on("link/remove", function (link) {
         Mongo.connect(DB, function (error, db) {

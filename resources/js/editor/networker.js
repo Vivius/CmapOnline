@@ -60,10 +60,20 @@ function addLink(link, callback) {
 
 /**
  * Sends a link to the server to delete it.
+ * @param link object
  */
 function removeLink(link) {
     if(Editor.writeAccess && link != null)
         socket.emit("link/remove", link);
+}
+
+/**
+ * Sends a link to the server to update the modification and share it.
+ * @param link object
+ */
+function updateLink(link) {
+    if(Editor.writeAccess && link != null)
+        socket.emit("link/update", link);
 }
 
 /**
@@ -129,6 +139,19 @@ socket.on("link/added", function (link) {
         var newLink = Graph.addLink(link._id, Graph.getNodeById(link.source), Graph.getNodeById(link.target), link.label, link.type, link.graph_id);
         Controller.addLinkEventListeners(newLink);
         console.log("LINK " + link._id + " ADDED");
+    }
+});
+
+/**
+ * Updates the local version of the link received from the server.
+ */
+socket.on("link/updated", function (link) {
+    if(link.graph_id != Editor.graphId) return;
+    var linkToUpdate = Graph.getLinkById(link._id);
+    if(linkToUpdate != null) {
+        linkToUpdate.type = link.type;
+        Graph.editLinkLabel(linkToUpdate, link.label);
+        console.log("LINK " + link._id + " UPDATED");
     }
 });
 
@@ -210,5 +233,6 @@ export {
     updateNode,
     addLink,
     removeLink,
+    updateLink,
     userConnection
 }

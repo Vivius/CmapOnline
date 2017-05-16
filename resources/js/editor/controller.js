@@ -136,6 +136,9 @@ function editNode() {
     Graph.nodeOldStyle(Graph.selectedNode);
     Graph.selectedNode.comment = nodeCommentTextArea.val();
     Networker.updateNode(Graph.selectedNode);
+    // Close the panel after update.
+    Graph.unselectNode();
+    updateMenu();
 }
 
 /**
@@ -236,6 +239,10 @@ function resetLinkEdition() {
  */
 function editLink() {
     Graph.editLinkLabel(Graph.selectedLink, linkLabelInput.val());
+    Networker.updateLink(Graph.selectedLink);
+    // Close the panel after update.
+    Graph.unselectLink();
+    updateMenu();
 }
 
 /**
@@ -244,7 +251,7 @@ function editLink() {
 function changeLinkType() {
     var link = Graph.selectedLink;
     if(!isLinkTypeCompatible(link.source, link.target, $(this).val())) {
-        alert("Contrainte de liaison.");
+        alert("Impossible to apply this link type between these nodes.");
         $(this).val(link.type);
         return;
     }
@@ -257,6 +264,7 @@ function changeLinkType() {
             default: return ("1, 0");
         }
     });
+    Networker.updateLink(link);
 }
 
 /**
