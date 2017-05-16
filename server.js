@@ -296,7 +296,7 @@ app.get("/graph/getAll", function (req, res) {
         var graphs = new Promise(function (resolve) {
             var usr = req.session.user;
             var query = {$or: [{owner: usr._id}, {read: {id: usr._id}}, {write: {id: usr._id}}]};
-            resolve(db.collection("graphs").find(query).toArray());
+            resolve(db.collection("graphs").find(query).sort( { date: -1 } ).toArray());
         });
 
         var users = new Promise(function (resolve) {
