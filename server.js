@@ -409,12 +409,18 @@ app.post("/graph/deleteAccess", function (req, res) {
  */
 app.post("/graph/deleteOne", function (req, res) {
     Mongo.connect(DB, function (error, db) {
-        db.collection('graphs', {}, function (err, graphs) {
-            var usr = req.session.user;
-            var query = {$and: [{_id: new ObjectId(req.body['_id'])}, {owner: usr._id}]};
-            graphs.remove(query, function () {
-                res.end();
-            });
+        var user = req.session.user;
+        var query = {$and: [{_id: new ObjectId(req.body._id)}, {owner: user._id}]};
+        db.collection("graphs").find(query).toArray(function (err, doc) {
+            if(doc.length > 0) {
+                db.collection("graphs").remove({_id: new ObjectId(req.body._id)}, function () {
+                    db.collection("nodes").remove({"graph_id": req.body._id});
+                    db.collection("links").remove({"graph_id": req.body._id});
+                    res.end();
+                });
+            } else {
+                res.json("You are not allowed to delete this graph");
+            }
         });
     });
 });
