@@ -148,8 +148,12 @@ body {
   z-index: 50;
 }
 
-
-
+.mailCell{
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .close {
   float: right;
@@ -158,8 +162,10 @@ body {
   top: -10px;
 }
 input[type="text"]:not(.addAccesInput){
-  width: 92%;
-  margin-top: 10px;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  width: 300px;
+  margin-top: 5px;
   padding: 5px;
   height: 35px;
   box-shadow: 1px 1px 1px 1px grey;
