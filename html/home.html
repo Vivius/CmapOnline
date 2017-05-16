@@ -75,20 +75,20 @@
         </div>
 
 
-        <div v-if="seenBlackOverlay" v-bind:style="styleObject" id="black_overlay" style="width: 100%;"> </div>
+        <div v-if="seenBlackOverlay" v-bind:style="styleObject" id="black_overlay" v-on:click="seenBoxConfirm = false; seenBoxAccess = false;  seenBoxNewGraph = false; seenBlackOverlay = false" style="width: 100%;"> </div>
 
         <div v-if="seenBoxNewGraph" v-bind:style="styleObject" class="added" style="display: block;">
             <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seenBoxNewGraph = false; seenBlackOverlay = false">
             <h3>New graph</h3>
             <input type="text" v-model="name" placeholder="Graph name">
-            <button v-on:click="insertGraph">Create</button>
+            <button v-on:click="insertGraph" class="boxButton">Create</button>
         </div>
 
         <div v-if="seenBoxConfirm" v-bind:style="styleObject" class="added" style="display: block;">
             <img src="/images/home/m_close-icon.png" width="20" height="20" class="close" v-on:click="seenBoxConfirm = false;seenBlackOverlay = false">
             <h3>Are you sure ?</h3>
-            <button v-on:click="deleteGraph(graphID);">Yes</button>
-            <button v-on:click="seenBoxConfirm = false;seenBlackOverlay = false">No</button>
+            <button v-on:click="deleteGraph(graphID); " class="boxButton">Yes</button>
+            <button v-on:click="seenBoxConfirm = false;seenBlackOverlay = false" class="boxButton">No</button>
         </div>
 
         <div v-if="seenBoxAccess" v-bind:style="styleObject" class="added boxAccess" style="display: block;">
