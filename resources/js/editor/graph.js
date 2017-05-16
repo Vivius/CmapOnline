@@ -90,8 +90,8 @@ var force = d3.layout.force()
     .links(dataset.links)
     .size([width, height])
     .linkDistance(linkDistance)
-    .charge(-200)
-    .friction(0.6)
+    .charge(-1250)
+    .friction(0.75)
     .gravity(0);
 
 // Force events
