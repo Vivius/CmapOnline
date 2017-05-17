@@ -1,3 +1,4 @@
+// Dépendences
 var Express = require('express');
 var BodyParser = require('body-parser');
 var Mongo = require("mongodb").MongoClient;
@@ -8,6 +9,7 @@ var Bcrypt = require('bcrypt-nodejs');
 var Favicon = require('serve-favicon');
 var SharedSession = require("express-socket.io-session");
 
+// Adresse de connexion de la base de données mongoDB.
 var DB = "mongodb://localhost/cmap";
 
 // Test de onnection à MongoDB.
@@ -41,7 +43,7 @@ var session = Session({
         secure: false,
         maxAge: new Date(Date.now() + (24 * 60 * 60 * 1000))
     },
-    store: new MongoStore({url: DB})
+    store: new MongoStore({url: DB}) // Utilisation de mongDB pour stocker les sessions.
 });
 
 // Utilisation des sessions dans express.
@@ -64,10 +66,11 @@ app.use(function (req, res, next) {
 //------------------------------------------------------------
 
 /**
+ * Page publique
  * Affichage de la page login
  */
 app.get('/', function (req, res) {
-    if (typeof req.session.user != 'undefined')
+    if (req.session.user)
         res.redirect('/home');
     else {
         res.setHeader('Content-Type', 'text/html');
@@ -85,18 +88,73 @@ app.get('/home', function (req, res) {
 
 /**
  * Affichage de la page d'édition du graphe spécifié.
+ * Le graphe peut être édité unquement si l'utilisateur possède les droits d'écriture ou est le possesseur du graphe.
  */
 app.get("/edit/:id", function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/editor.html');
+    var id = req.params["id"];
+    Mongo.connect(DB, function (err, db) {
+       db.collection("graphs").find({_id: new ObjectId(id)}).toArray(function (err, result) {
+           var valid = false;
+            if(result.length) {
+                var graph = result[0];
+                if(graph.owner == req.session.user._id) valid = true; // Vérification propriétaire.
+                else {
+                    // Vérification accès écriture.
+                    for(var user in graph.write) {
+                        if(graph.write[user].id == req.session.user._id) {
+                            valid = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if(valid) {
+                res.setHeader('Content-Type', 'text/html');
+                res.sendFile(__dirname + '/html/editor.html');
+            } else {
+                res.status(401).send('You are not allowed to open this graph. Contacts the owner if you want to collaborate with him.');
+            }
+       });
+    });
 });
 
 /**
  * Affichage de la page de lecture du graphe spécifié.
+ * Tous les utilisateurs ayant au moins le droit de lecture peuvent utiliser cette route pour ouvrir un graph en lecture.
  */
 app.get("/view/:id", function (req, res) {
-    res.setHeader('Content-Type', 'text/html');
-    res.sendFile(__dirname + '/html/editor.html');
+    var id = req.params["id"];
+    Mongo.connect(DB, function (err, db) {
+        db.collection("graphs").find({_id: new ObjectId(id)}).toArray(function (err, result) {
+            var valid = false;
+            if(result.length) {
+                var graph = result[0];
+                if(graph.owner == req.session.user._id) valid = true; // Vérification propriétaire.
+                else {
+                    // Vérification accès écriture.
+                    for(var user in graph.write) {
+                        if(graph.write[user].id == req.session.user._id) {
+                            valid = true;
+                            break;
+                        }
+                    }
+                    // Vérification accès lecture.
+                    for(var user in graph.read) {
+                        if(graph.read[user].id == req.session.user._id) {
+                            valid = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if(valid) {
+                res.setHeader('Content-Type', 'text/html');
+                res.sendFile(__dirname + '/html/editor.html');
+            } else {
+                res.status(401).send('You are not allowed to open this graph. Contacts the owner if you want to collaborate with him.');
+            }
+        });
+    });
 });
 
 //------------------------------------------------------------
